@@ -1,14 +1,19 @@
 import { JamendoTrack, JamendoArtist, JamendoAlbum, JamendoResponse } from '../types/jamendo';
 
 const CLIENT_ID = import.meta.env.VITE_JAMENDO_CLIENT_ID as string;
-const USE_PROXY = import.meta.env.VITE_USE_PROXY === 'true';
 const BASE_URL = 'https://api.jamendo.com/v3.0';
-const PROXY_URL = 'https://corsproxy.io/?url=';
 
-// Flag para rastrear si la API está disponible
+// Lista de proxies CORS para fallback
+const CORS_PROXIES = [
+  'https://corsproxy.io/?url=',
+  'https://api.allorigins.win/raw?url=',
+  'https://cors-anywhere.herokuapp.com/',
+];
+
+let currentProxyIndex = 0;
 let apiAvailable = true;
 
-function buildUrl(endpoint: string, params: Record<string, string> = {}): string {
+function buildDirectUrl(endpoint: string, params: Record<string, string> = {}): string {
   const url = new URL(`${BASE_URL}${endpoint}`);
   url.searchParams.set('client_id', CLIENT_ID);
   url.searchParams.set('format', 'json');
@@ -17,49 +22,91 @@ function buildUrl(endpoint: string, params: Record<string, string> = {}): string
     if (value) url.searchParams.set(key, value);
   });
 
-  const finalUrl = url.toString();
-  return USE_PROXY ? `${PROXY_URL}${encodeURIComponent(finalUrl)}` : finalUrl;
+  return url.toString();
+}
+
+function buildProxyUrl(directUrl: string): string {
+  const proxy = CORS_PROXIES[currentProxyIndex];
+  return `${proxy}${encodeURIComponent(directUrl)}`;
+}
+
+async function fetchWithFallback<T>(url: string): Promise<T> {
+  // Intentar directo primero
+  try {
+    const response = await fetch(url, { 
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (response.ok) {
+      return await response.json();
+    }
+    
+    // Si es error de auth, no reintentar
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Auth error: ${response.status}`);
+    }
+  } catch (error) {
+    console.warn('Direct fetch failed, trying proxy...');
+  }
+
+  // Intentar con proxies
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    currentProxyIndex = i;
+    const proxyUrl = buildProxyUrl(url);
+    
+    try {
+      const response = await fetch(proxyUrl);
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.warn(`Proxy ${i + 1} failed, trying next...`);
+      continue;
+    }
+  }
+
+  throw new Error('All fetch attempts failed');
 }
 
 async function fetchJamendo<T>(endpoint: string, params: Record<string, string> = {}): Promise<T[]> {
-  // Si la API ya falló antes, retornar array vacío inmediatamente
   if (!apiAvailable) {
     return [];
   }
 
   try {
-    const url = buildUrl(endpoint, params);
-    const response = await fetch(url);
+    const url = buildDirectUrl(endpoint, params);
+    const data = await fetchWithFallback<JamendoResponse<T>>(url);
     
-    if (!response.ok) {
-      // Si es 401, marcar API como no disponible
-      if (response.status === 401 || response.status === 403) {
-        apiAvailable = false;
-        console.warn('Jamendo API no disponible (auth error). Usando datos de demostración.');
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: JamendoResponse<T> = await response.json();
-    
-    if (data.headers.status === 'error') {
+    if (data.headers?.status === 'error') {
       throw new Error(data.headers.error_message);
     }
     
-    return data.results;
+    return data.results || [];
   } catch (error) {
     console.error('Jamendo API error:', error);
-    // Marcar como no disponible si hay errores repetidos
-    if (error instanceof Error && error.message.includes('401')) {
+    
+    // Marcar como no disponible solo si es error de auth
+    if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
       apiAvailable = false;
+      console.warn('Jamendo API no disponible. Usando datos de demostración.');
     }
+    
     throw error;
   }
 }
 
-// Función para verificar si la API está disponible
 export function isJamendoApiAvailable(): boolean {
   return apiAvailable;
+}
+
+export function resetApiAvailability(): void {
+  apiAvailable = true;
+  currentProxyIndex = 0;
 }
 
 export async function getPopularTracks(limit = 20): Promise<JamendoTrack[]> {
@@ -67,7 +114,8 @@ export async function getPopularTracks(limit = 20): Promise<JamendoTrack[]> {
     limit: limit.toString(),
     order: 'popularity_total',
     include: 'musicinfo',
-    audioformat: 'mp32'
+    audioformat: 'mp32',
+    imagesize: '300'
   });
 }
 

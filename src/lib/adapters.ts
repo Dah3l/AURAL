@@ -2,13 +2,16 @@ import { JamendoTrack, JamendoArtist, JamendoAlbum } from '../types/jamendo';
 import { Track, Artist, Album } from '../types';
 
 export function jamendoTrackToTrack(jTrack: JamendoTrack): Track {
+  // Extraer el primer género de musicinfo.tags
+  const genre = jTrack.musicinfo?.tags?.genres?.[0] || 'Various';
+  
   return {
     id: `jamendo-${jTrack.id}`,
     title: jTrack.name,
     artist: jTrack.artist_name,
     artistId: `jamendo-artist-${jTrack.artist_id}`,
-    album: jTrack.album_name,
-    albumId: `jamendo-album-${jTrack.album_id}`,
+    album: jTrack.album_name || 'Single',
+    albumId: `jamendo-album-${jTrack.album_id || 'single'}`,
     duration: jTrack.duration,
     cover: jTrack.image || jTrack.album_image || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop',
     audioUrl: jTrack.audio,
