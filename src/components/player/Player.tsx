@@ -290,10 +290,10 @@ export function Player() {
           <div className="flex items-center gap-2 md:gap-3">
             <button 
               onClick={toggleShuffle}
-              className={`hidden md:block transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              className={`transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
               aria-label="Aleatorio"
             >
-              <Shuffle className="w-4 h-4" strokeWidth={1.75} />
+              <Shuffle className="w-4 h-4 md:w-4 md:h-4" strokeWidth={1.75} />
             </button>
             <button 
               onClick={prevTrack} 
@@ -322,10 +322,10 @@ export function Player() {
             </button>
             <button 
               onClick={cycleRepeat}
-              className={`hidden md:block transition-colors ${repeat !== 'off' ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              className={`transition-colors ${repeat !== 'off' ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
               aria-label={repeat === 'one' ? 'Repetir una' : repeat === 'all' ? 'Repetir todo' : 'No repetir'}
             >
-              {repeat === 'one' ? <Repeat1 className="w-4 h-4" strokeWidth={1.75} /> : <Repeat className="w-4 h-4" strokeWidth={1.75} />}
+              {repeat === 'one' ? <Repeat1 className="w-4 h-4 md:w-4 md:h-4" strokeWidth={1.75} /> : <Repeat className="w-4 h-4 md:w-4 md:h-4" strokeWidth={1.75} />}
             </button>
           </div>
 
