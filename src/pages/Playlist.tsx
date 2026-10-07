@@ -1,59 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useParams } from 'react-router-dom';
 import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { getTracksByTag, getPopularTracks } from '../lib/jamendo';
-import { jamendoTracksToTracks } from '../lib/adapters';
+import { usePlaylistData } from '../lib/useAuralData';
+import { playlists as mockPlaylists } from '../lib/mockData';
 import { formatDuration, formatTime } from '../lib/utils';
-import { Track } from '../types';
-
-// Mapeo de playlists mock a tags de Jamendo
-const playlistTagMap: Record<string, string> = {
-  'p1': 'chill',
-  'p2': 'electronic',
-  'p3': 'indie',
-  'p4': 'ambient',
-  'p5': 'rock',
-  'p6': 'acoustic',
-};
 
 export function PlaylistPage() {
   const { id } = useParams<{ id: string }>();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked, playlists } = useLibraryStore();
+  const { toggleLike, isLiked } = useLibraryStore();
 
-  const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: playlistTracks, loading } = usePlaylistData(id || '');
 
-  const playlist = playlists.find(p => p.id === id);
-
-  useEffect(() => {
-    async function loadPlaylist() {
-      if (!id) return;
-      
-      try {
-        setLoading(true);
-        
-        // Obtener tag de la playlist o usar popular tracks por defecto
-        const tag = playlistTagMap[id];
-        const tracks = tag 
-          ? await getTracksByTag(tag, 20)
-          : await getPopularTracks(20);
-        
-        setPlaylistTracks(jamendoTracksToTracks(tracks));
-      } catch (error) {
-        console.error('Error loading playlist:', error);
-        toast.error('Algo se desafinó. Intenta de nuevo.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadPlaylist();
-  }, [id]);
+  // Buscar playlist en datos mock
+  const playlist = id ? mockPlaylists.find(p => p.id === id) : null;
 
   if (loading) {
     return (

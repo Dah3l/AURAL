@@ -5,6 +5,9 @@ const USE_PROXY = import.meta.env.VITE_USE_PROXY === 'true';
 const BASE_URL = 'https://api.jamendo.com/v3.0';
 const PROXY_URL = 'https://corsproxy.io/?url=';
 
+// Flag para rastrear si la API está disponible
+let apiAvailable = true;
+
 function buildUrl(endpoint: string, params: Record<string, string> = {}): string {
   const url = new URL(`${BASE_URL}${endpoint}`);
   url.searchParams.set('client_id', CLIENT_ID);
@@ -19,11 +22,21 @@ function buildUrl(endpoint: string, params: Record<string, string> = {}): string
 }
 
 async function fetchJamendo<T>(endpoint: string, params: Record<string, string> = {}): Promise<T[]> {
+  // Si la API ya falló antes, retornar array vacío inmediatamente
+  if (!apiAvailable) {
+    return [];
+  }
+
   try {
     const url = buildUrl(endpoint, params);
     const response = await fetch(url);
     
     if (!response.ok) {
+      // Si es 401, marcar API como no disponible
+      if (response.status === 401 || response.status === 403) {
+        apiAvailable = false;
+        console.warn('Jamendo API no disponible (auth error). Usando datos de demostración.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -36,8 +49,17 @@ async function fetchJamendo<T>(endpoint: string, params: Record<string, string> 
     return data.results;
   } catch (error) {
     console.error('Jamendo API error:', error);
+    // Marcar como no disponible si hay errores repetidos
+    if (error instanceof Error && error.message.includes('401')) {
+      apiAvailable = false;
+    }
     throw error;
   }
+}
+
+// Función para verificar si la API está disponible
+export function isJamendoApiAvailable(): boolean {
+  return apiAvailable;
 }
 
 export async function getPopularTracks(limit = 20): Promise<JamendoTrack[]> {

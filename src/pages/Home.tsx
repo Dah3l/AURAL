@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
-import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { getPopularTracks, getPopularArtists } from '../lib/jamendo';
-import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
+import { usePopularTracks, usePopularArtists } from '../lib/useAuralData';
 import { getGreeting } from '../lib/utils';
 import { Link } from 'react-router-dom';
-import { Track, Artist } from '../types';
 
 const container = {
   hidden: { opacity: 0 },
@@ -23,31 +19,10 @@ export function Home() {
   const { playTrack } = usePlayerStore();
   const recentlyPlayed = useLibraryStore(s => s.recentlyPlayed);
   
-  const [popularTracks, setPopularTracks] = useState<Track[]>([]);
-  const [popularArtists, setPopularArtists] = useState<Artist[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: popularTracks, loading: tracksLoading } = usePopularTracks(12);
+  const { data: popularArtists, loading: artistsLoading } = usePopularArtists(6);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [tracks, artists] = await Promise.all([
-          getPopularTracks(12),
-          getPopularArtists(6)
-        ]);
-        
-        setPopularTracks(jamendoTracksToTracks(tracks));
-        setPopularArtists(jamendoArtistsToArtists(artists));
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Algo se desafinó. Intenta de nuevo.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    loadData();
-  }, []);
+  const loading = tracksLoading || artistsLoading;
 
   const recentTracks = recentlyPlayed
     .map(id => popularTracks.find(t => t.id === id))
@@ -108,7 +83,7 @@ export function Home() {
         </motion.div>
       )}
 
-      {/* Hecho para ti — Popular */}
+      {/* Lo más popular */}
       <motion.section variants={item} className="mb-10">
         <div className="flex items-baseline justify-between mb-4">
           <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
