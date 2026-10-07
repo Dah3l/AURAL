@@ -122,15 +122,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors"
                 >
                   <div className="w-8 h-8 rounded bg-[#1E1E26] flex items-center justify-center shrink-0 overflow-hidden">
-                    {playlist.cover ? (
-                      <img src={playlist.cover} alt="" className="w-full h-full object-cover" />
+                    {playlist.cover_url ? (
+                      <img src={playlist.cover_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Music2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
                     )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                    <p className="text-xs text-[#8B8B96] truncate">Playlist · {playlist.owner}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">Playlist</p>
                   </div>
                 </Link>
               ))}

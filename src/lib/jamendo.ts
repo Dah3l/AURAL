@@ -223,3 +223,17 @@ export async function getAlbumInfo(albumId: string): Promise<JamendoAlbum | null
     return null;
   }
 }
+
+export async function getTrackById(trackId: string): Promise<JamendoTrack | null> {
+  try {
+    const tracks = await fetchJamendo<JamendoTrack>('/tracks/', {
+      id: trackId,
+      include: 'musicinfo',
+      audioformat: 'mp32',
+      imagesize: '300'
+    });
+    return tracks[0] || null;
+  } catch {
+    return null;
+  }
+}
