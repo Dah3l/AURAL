@@ -16,7 +16,7 @@ export function PlaylistPage() {
   if (!playlist) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-white/50">Playlist not found</p>
+        <p className="text-[#8B8B96]">No encontramos esa playlist.</p>
       </div>
     );
   }
@@ -42,63 +42,61 @@ export function PlaylistPage() {
           animate={{ scale: 1, opacity: 1 }}
           src={playlist.cover}
           alt={playlist.title}
-          className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-2xl"
+          className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-2xl ring-1 ring-[#2A2A35]"
         />
         <div className="text-center md:text-left">
-          <p className="text-xs uppercase tracking-wider text-white/50 mb-1">Playlist</p>
-          <h1 className="text-3xl md:text-5xl font-bold mb-2">{playlist.title}</h1>
-          <p className="text-white/60 mb-3">{playlist.description}</p>
-          <div className="flex items-center gap-2 text-sm text-white/50 justify-center md:justify-start">
-            <span className="font-medium text-white">{playlist.owner}</span>
-            <span>•</span>
-            <span>{playlist.tracks.length} songs</span>
-            <span>•</span>
-            <span>{formatDuration(totalDuration)}</span>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-2">Playlist</p>
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2 text-[#F5F5F7]">{playlist.title}</h1>
+          <p className="text-[#8B8B96] mb-3">{playlist.description}</p>
+          <div className="flex items-center gap-2 text-sm text-[#8B8B96] justify-center md:justify-start">
+            <span className="font-medium text-[#F5F5F7]">{playlist.owner}</span>
+            <span>·</span>
+            <span>{playlist.tracks.length} canciones</span>
+            <span>·</span>
+            <span className="font-mono">{formatDuration(totalDuration)}</span>
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4 mb-6">
+      {/* Acciones */}
+      <div className="flex items-center gap-3 mb-6">
         <button
           onClick={handlePlayAll}
-          className="w-14 h-14 rounded-full gradient-accent flex items-center justify-center hover:scale-105 transition-transform shadow-lg"
+          className="w-14 h-14 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 transition-transform"
         >
           {isCurrentPlaylist && isPlaying ? (
-            <Pause className="w-6 h-6 text-white fill-white" />
+            <Pause className="w-6 h-6 text-white fill-white" strokeWidth={1.75} />
           ) : (
-            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+            <Play className="w-6 h-6 text-white fill-white ml-0.5" strokeWidth={1.75} />
           )}
         </button>
-        <button className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
-          <Shuffle className="w-5 h-5" />
+        <button className="p-2 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+          <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
         <button
           onClick={() => {
             navigator.clipboard.writeText(window.location.href);
-            toast.success('Link copied to clipboard!');
+            toast.success('Link copiado. Ya es de quien quieras.');
           }}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          className="p-2 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
         >
-          <Share2 className="w-5 h-5" />
+          <Share2 className="w-5 h-5" strokeWidth={1.75} />
         </button>
-        <button className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
-          <MoreHorizontal className="w-5 h-5" />
+        <button className="p-2 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+          <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
         </button>
       </div>
 
-      {/* Track List */}
+      {/* Lista de canciones */}
       <div className="space-y-0">
-        {/* Header */}
-        <div className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 border-b border-white/5 text-xs text-white/40 uppercase tracking-wider">
+        <div className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 border-b border-[#2A2A35] text-[11px] text-[#8B8B96] uppercase tracking-[0.1em] font-medium">
           <span>#</span>
-          <span>Title</span>
-          <span className="hidden md:block">Album</span>
-          <span className="hidden md:block"><Clock className="w-4 h-4" /></span>
+          <span>Título</span>
+          <span className="hidden md:block">Álbum</span>
+          <span className="hidden md:block flex justify-end"><Clock className="w-4 h-4" strokeWidth={1.75} /></span>
           <span></span>
         </div>
 
-        {/* Tracks */}
         {playlistTracks.map((track, i) => (
           track && (
             <motion.div
@@ -107,29 +105,30 @@ export function PlaylistPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
               onClick={() => playTrack(track, playlistTracks as NonNullable<ReturnType<typeof getTrackById>>[])}
-              className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer items-center"
+              className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors group cursor-pointer items-center"
             >
-              <span className="text-sm text-white/40 group-hover:hidden">{i + 1}</span>
-              <Play className="w-4 h-4 text-white hidden group-hover:block" />
+              <span className="text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
+              <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block" strokeWidth={1.75} />
               <div className="flex items-center gap-3 min-w-0">
                 <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
                 <div className="min-w-0">
-                  <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-violet-400' : ''}`}>
+                  <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
                     {track.title}
                   </p>
-                  <p className="text-xs text-white/50 truncate">{track.artist}</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
                 </div>
               </div>
-              <span className="text-sm text-white/50 truncate hidden md:block">{track.album}</span>
-              <span className="text-sm text-white/40 hidden md:block">{formatTime(track.duration)}</span>
+              <span className="text-sm text-[#8B8B96] truncate hidden md:block">{track.album}</span>
+              <span className="text-sm text-[#8B8B96] hidden md:block text-right font-mono">{formatTime(track.duration)}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
                 className="justify-self-end"
               >
                 <Heart
                   className={`w-4 h-4 transition-all ${
-                    isLiked(track.id) ? 'text-violet-400 fill-violet-400' : 'text-transparent group-hover:text-white/40'
+                    isLiked(track.id) ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-transparent group-hover:text-[#8B8B96]'
                   }`}
+                  strokeWidth={1.75}
                 />
               </button>
             </motion.div>

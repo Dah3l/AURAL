@@ -13,11 +13,10 @@ export function TopBar({ isDark, onToggleTheme }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && !searchFocused) {
+      if (e.key === '/' && !searchFocused && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         searchRef.current?.focus();
       }
@@ -38,22 +37,24 @@ export function TopBar({ isDark, onToggleTheme }: TopBarProps) {
     <header
       className={cn(
         'sticky top-0 z-20 px-4 md:px-6 py-3 flex items-center gap-4 transition-all duration-300',
-        scrolled ? 'bg-[#0A0A0A]/90 backdrop-blur-xl' : 'bg-transparent'
+        scrolled ? 'bg-[#08080C]/90 backdrop-blur-xl border-b border-[#2A2A35]/50' : 'bg-transparent'
       )}
     >
-      {/* Navigation arrows */}
+      {/* Nav arrows */}
       <div className="flex items-center gap-1">
         <button
           onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-full bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] flex items-center justify-center transition-all"
+          aria-label="Atrás"
         >
-          <ChevronLeft className="w-4 h-4 text-white/70" />
+          <ChevronLeft className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
         </button>
         <button
           onClick={() => navigate(1)}
-          className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-full bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] flex items-center justify-center transition-all"
+          aria-label="Adelante"
         >
-          <ChevronRight className="w-4 h-4 text-white/70" />
+          <ChevronRight className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
         </button>
       </div>
 
@@ -62,14 +63,14 @@ export function TopBar({ isDark, onToggleTheme }: TopBarProps) {
         'flex-1 max-w-md relative transition-all duration-300',
         searchFocused && 'max-w-lg'
       )}>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
         <input
           ref={searchRef}
           type="text"
-          placeholder="What do you want to listen to? (/)"
+          placeholder="¿Qué quieres escuchar?"
           onFocus={() => { setSearchFocused(true); navigate('/search'); }}
           onBlur={() => setSearchFocused(false)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all"
+          className="w-full pl-10 pr-4 py-2.5 rounded-full bg-[#131318] border border-[#2A2A35] text-sm text-[#F5F5F7] placeholder:text-[#8B8B96] focus:outline-none focus:border-[#7C3AED]/50 focus:bg-[#1E1E26] transition-all"
         />
       </div>
 
@@ -77,16 +78,17 @@ export function TopBar({ isDark, onToggleTheme }: TopBarProps) {
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleTheme}
-          className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-          aria-label="Toggle theme"
+          className="w-9 h-9 rounded-full bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] flex items-center justify-center transition-all"
+          aria-label="Cambiar tema"
         >
-          {isDark ? <Sun className="w-4 h-4 text-white/70" /> : <Moon className="w-4 h-4 text-white/70" />}
+          {isDark ? <Sun className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} /> : <Moon className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />}
         </button>
         <button
           onClick={() => navigate('/profile')}
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center hover:opacity-90 transition-opacity"
+          className="w-9 h-9 rounded-full gradient-aura flex items-center justify-center hover:opacity-90 transition-opacity shadow-[0_0_16px_rgba(124,58,237,0.3)]"
+          aria-label="Perfil"
         >
-          <User className="w-4 h-4 text-white" />
+          <User className="w-4 h-4 text-white" strokeWidth={1.75} />
         </button>
       </div>
     </header>

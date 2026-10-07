@@ -19,9 +19,9 @@ export function formatNumber(num: number): string {
 
 export function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Buenos días';
+  if (hour < 19) return 'Buenas tardes';
+  return 'Buenas noches';
 }
 
 export function cn(...classes: (string | undefined | false)[]): string {
