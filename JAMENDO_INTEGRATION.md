@@ -135,21 +135,50 @@ Para probar la integración:
 4. **Playlist**: Las playlists deberían mostrar tracks del género correspondiente
 5. **Player**: Las canciones deberían reproducirse sin problemas de CORS
 
+## Sistema de Fallback Automático
+
+La aplicación incluye un sistema de fallback robusto que garantiza que siempre haya contenido disponible:
+
+### Cómo funciona
+
+1. **Detección de errores**: Si la API de Jamendo devuelve error 401/403, se marca como no disponible
+2. **Fallback automático**: Las páginas usan datos mock locales cuando la API falla
+3. **Sin interrupciones**: El usuario siempre ve contenido, sin errores visibles
+
+### Implementación
+
+- `src/lib/useAuralData.ts` - Hooks con fallback integrado
+- `isJamendoApiAvailable()` - Verifica si la API está disponible
+- Si la API falla, se usan datos de `src/lib/mockData.ts`
+
+### Ventajas
+
+✅ La app siempre funciona, con o sin API
+✅ No muestra errores al usuario
+✅ Transición transparente entre API y fallback
+✅ Los datos mock incluyen audio funcional (SoundHelix)
+
 ## Troubleshooting
+
+### Error 401 Unauthorized
+- El `client_id` puede no ser válido o haber expirado
+- La app automáticamente usa datos mock como fallback
+- No afecta la experiencia del usuario
 
 ### Error de CORS
 - Verifica que `VITE_USE_PROXY=true` en `.env`
-- Si el proxy falla, intenta cambiar a otro servicio como `https://api.allorigins.win/raw?url=`
+- Si el proxy falla, la app usa fallback automáticamente
+- Alternativa: `https://api.allorigins.win/raw?url=`
 
 ### Tracks no se reproducen
-- Verifica que `jTrack.audio` no sea null
-- Jamendo puede tener restricciones geográficas en algunos tracks
+- Con Jamendo: verifica que `jTrack.audio` no sea null
+- Con fallback: los tracks usan SoundHelix (siempre funcionan)
 - Revisa la consola del navegador para errores de red
 
 ### Búsqueda lenta
 - El debounce de 300ms debería ayudar
-- Si sigue siendo lento, considera cachear resultados en localStorage
-- Jamendo puede tener latencia variable según la región
+- Si la API falla, la búsqueda filtra datos mock localmente
+- La búsqueda local es instantánea
 
 ## Futuras Mejoras
 
