@@ -200,19 +200,18 @@ export function Home() {
             <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            {popularArtists.map(artist => (
-              <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
-                <motion.div whileHover={{ y: -4 }} className="relative mb-3">
-                  <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                  <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                    <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
-                  </div>
-                </motion.div>
-                <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
-                <p className="text-xs text-[#8B8B96] text-center">Artista</p>
-              </Link>
-            ))}
-          </div>
+          {popularArtists.map(artist => (
+            <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
+              <motion.div whileHover={{ y: -4 }} className="relative mb-3">
+                <img src={artist.image} alt="" className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+                </div>
+              </motion.div>
+              <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
+              <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+            </Link>
+          ))}          </div>
         </motion.section>
       )}
     </motion.div>

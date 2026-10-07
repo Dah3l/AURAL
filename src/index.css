@@ -19,6 +19,34 @@
   --color-aura-soft: #A78BFA;
 }
 
+/* Tema claro */
+.light {
+  --color-void: #FAFAFA;
+  --color-carbon: #FFFFFF;
+  --color-slate: #F5F5F5;
+  --color-edge: #E5E5E5;
+  --color-snow: #0A0A0A;
+  --color-ash: #6B6B76;
+}
+
+.light html,
+.light body {
+  background-color: #FAFAFA;
+  color: #0A0A0A;
+}
+
+.light * {
+  scrollbar-color: #E5E5E5 transparent;
+}
+
+.light *::-webkit-scrollbar-thumb {
+  background: #E5E5E5;
+}
+
+.light *::-webkit-scrollbar-thumb:hover {
+  background: #D5D5D5;
+}
+
 /* Scrollbar sutil */
 * {
   scrollbar-width: thin;

@@ -33,13 +33,28 @@ export function SearchPage() {
         setLoading(true);
         setHasSearched(true);
         
-        const [trackResults, artistResults] = await Promise.all([
-          searchTracks(debouncedQuery, 20),
-          getPopularArtists(10)
-        ]);
+        // Buscar tracks por el query
+        const trackResults = await searchTracks(debouncedQuery, 20);
+        const convertedTracks = jamendoTracksToTracks(trackResults);
+        setTracks(convertedTracks);
         
-        setTracks(jamendoTracksToTracks(trackResults));
-        setArtists(jamendoArtistsToArtists(artistResults));
+        // Extraer artistas únicos de los tracks encontrados
+        const uniqueArtists = new Map<string, Artist>();
+        convertedTracks.forEach(track => {
+          if (!uniqueArtists.has(track.artistId)) {
+            uniqueArtists.set(track.artistId, {
+              id: track.artistId,
+              name: track.artist,
+              image: track.cover, // Usar la portada del track como imagen del artista
+              genre: 'Various',
+              monthlyListeners: 0,
+              verified: false,
+              albums: [],
+            });
+          }
+        });
+        
+        setArtists(Array.from(uniqueArtists.values()).slice(0, 10));
       } catch (error) {
         console.error('Search error:', error);
       } finally {
@@ -136,7 +151,7 @@ export function SearchPage() {
                     animate={{ opacity: 1, y: 0 }}
                   >
                     <Link to={`/artist/${artist.id}`} className="group cursor-pointer block">
-                      <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-1.5 md:mb-2 ring-1 ring-[#2A2A35]" />
+                      <img src={artist.image} alt="" className="w-full aspect-square rounded-full object-cover shadow-lg mb-1.5 md:mb-2 ring-1 ring-[#2A2A35]" />
                       <p className="text-xs sm:text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
                       <p className="text-[10px] sm:text-xs text-[#8B8B96] text-center">Artista</p>
                     </Link>

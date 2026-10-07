@@ -9,6 +9,17 @@ export function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
 
+  // Aplicar tema al document
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -21,7 +32,7 @@ export function MainLayout() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#08080C] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#08080C] dark:bg-[#08080C] light:bg-[#FAFAFA] overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <div className="hidden md:block">
           <Sidebar
