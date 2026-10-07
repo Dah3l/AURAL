@@ -174,7 +174,7 @@ export function LibraryPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         {[
           { key: 'playlists' as Tab, label: 'Playlists', icon: Music2 },
           { key: 'albums' as Tab, label: 'Álbumes', icon: Disc3 },
@@ -185,14 +185,14 @@ export function LibraryPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 md:px-4 md:py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200',
+              'flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 min-w-fit',
               activeTab === tab.key
                 ? 'bg-[#F5F5F7] text-[#08080C]'
                 : 'bg-[#131318] text-[#8B8B96] border border-[#2A2A35] hover:bg-[#1E1E26] hover:text-[#F5F5F7]'
             )}
           >
-            <tab.icon className="w-4 h-4" strokeWidth={1.75} />
-            {tab.label}
+            <tab.icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>

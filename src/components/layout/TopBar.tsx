@@ -58,9 +58,9 @@ export function TopBar({ isDark, onToggleTheme }: TopBarProps) {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search - Solo desktop */}
       <div className={cn(
-        'flex-1 max-w-md relative transition-all duration-300',
+        'hidden md:flex flex-1 max-w-md relative transition-all duration-300',
         searchFocused && 'max-w-lg'
       )}>
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
