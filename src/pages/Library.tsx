@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid3X3, List, Music2, Disc3, Users, Heart, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { tracks, getTrackById } from '../lib/mockData';
 import { cn } from '../lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
+import { getTrackById as getJamendoTrack } from '../lib/jamendo';
+import { jamendoTrackToTrack } from '../lib/adapters';
+import type { Track, Artist, Album } from '../types';
 
 type Tab = 'playlists' | 'albums' | 'artists' | 'liked';
 type View = 'grid' | 'list';
@@ -19,18 +21,100 @@ export function LibraryPage() {
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
   const [creating, setCreating] = useState(false);
   
+  const [likedTracksList, setLikedTracksList] = useState<Track[]>([]);
+  const [artistsList, setArtistsList] = useState<Artist[]>([]);
+  const [albumsList, setAlbumsList] = useState<Album[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks, createPlaylist } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist, recentlyPlayed } = useLibraryStore();
   const navigate = useNavigate();
 
-  const tabs = [
-    { key: 'playlists' as Tab, label: 'Playlists', icon: Music2 },
-    { key: 'albums' as Tab, label: 'Álbumes', icon: Disc3 },
-    { key: 'artists' as Tab, label: 'Artistas', icon: Users },
-    { key: 'liked' as Tab, label: 'Favoritas', icon: Heart },
-  ];
+  // Cargar tracks favoritos
+  useEffect(() => {
+    async function loadLikedTracks() {
+      if (likedTracks.length === 0) {
+        setLikedTracksList([]);
+        return;
+      }
 
-  const likedTracksList = likedTracks.map(id => getTrackById(id)).filter(Boolean);
+      const tracks: Track[] = [];
+      for (const trackId of likedTracks) {
+        try {
+          const jamendoTrack = await getJamendoTrack(trackId.replace('jamendo-', ''));
+          if (jamendoTrack) {
+            tracks.push(jamendoTrackToTrack(jamendoTrack));
+          }
+        } catch (error) {
+          console.error(`Error loading track ${trackId}:`, error);
+        }
+      }
+      setLikedTracksList(tracks);
+    }
+
+    loadLikedTracks();
+  }, [likedTracks]);
+
+  // Cargar artistas y álbumes del historial
+  useEffect(() => {
+    async function loadHistoryData() {
+      setLoading(true);
+      
+      if (recentlyPlayed.length === 0) {
+        setArtistsList([]);
+        setAlbumsList([]);
+        setLoading(false);
+        return;
+      }
+
+      const artistsMap = new Map<string, Artist>();
+      const albumsMap = new Map<string, Album>();
+
+      for (const trackId of recentlyPlayed.slice(0, 30)) {
+        try {
+          const jamendoTrack = await getJamendoTrack(trackId.replace('jamendo-', ''));
+          if (jamendoTrack) {
+            const track = jamendoTrackToTrack(jamendoTrack);
+            
+            // Agregar artista si no existe
+            if (!artistsMap.has(track.artistId)) {
+              artistsMap.set(track.artistId, {
+                id: track.artistId,
+                name: track.artist,
+                image: track.cover,
+                genre: 'Various',
+                monthlyListeners: 0,
+                verified: false,
+                albums: [],
+              });
+            }
+            
+            // Agregar álbum si no existe
+            if (!albumsMap.has(track.albumId)) {
+              albumsMap.set(track.albumId, {
+                id: track.albumId,
+                title: track.album,
+                artist: track.artist,
+                artistId: track.artistId,
+                cover: track.cover,
+                year: 2024,
+                tracks: [],
+                type: 'album',
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error loading track ${trackId}:`, error);
+        }
+      }
+
+      setArtistsList(Array.from(artistsMap.values()));
+      setAlbumsList(Array.from(albumsMap.values()));
+      setLoading(false);
+    }
+
+    loadHistoryData();
+  }, [recentlyPlayed]);
 
   const handleCreatePlaylist = async () => {
     if (!newPlaylistTitle.trim()) {
@@ -91,7 +175,12 @@ export function LibraryPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {tabs.map(tab => (
+        {[
+          { key: 'playlists' as Tab, label: 'Playlists', icon: Music2 },
+          { key: 'albums' as Tab, label: 'Álbumes', icon: Disc3 },
+          { key: 'artists' as Tab, label: 'Artistas', icon: Users },
+          { key: 'liked' as Tab, label: 'Favoritas', icon: Heart },
+        ].map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -115,62 +204,45 @@ export function LibraryPage() {
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'
             : 'space-y-1'
         )}>
-          {view === 'grid' ? (
-            <button onClick={() => setActiveTab('liked')} className="group text-left">
-              <div className="relative mb-3">
-                <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
-                  <Heart className="w-12 h-12 text-white fill-white" strokeWidth={1.75} />
-                </div>
-              </div>
-              <p className="text-sm font-medium text-[#F5F5F7]">Tus favoritas</p>
-              <p className="text-xs text-[#8B8B96]">{likedTracks.length} canciones</p>
-            </button>
+          {playlists.length === 0 ? (
+            <div className="col-span-full text-center py-16">
+              <Music2 className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
+              <p className="text-[#8B8B96]">Aún no tienes playlists</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Crea una para empezar</p>
+            </div>
           ) : (
-            <button
-              onClick={() => setActiveTab('liked')}
-              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors"
-            >
-              <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
-                <Heart className="w-5 h-5 text-white fill-white" strokeWidth={1.75} />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-[#F5F5F7]">Tus favoritas</p>
-                <p className="text-xs text-[#8B8B96]">Playlist · {likedTracks.length} canciones</p>
-              </div>
-            </button>
-          )}
-
-          {playlists.map(playlist => (
-            view === 'grid' ? (
-              <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group">
-                <div className="relative mb-3">
-                  {playlist.cover_url ? (
-                    <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                  ) : (
-                    <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
-                      <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
-              </Link>
-            ) : (
-              <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                {playlist.cover_url ? (
-                  <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
-                ) : (
-                  <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
-                    <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+            playlists.map(playlist => (
+              view === 'grid' ? (
+                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group">
+                  <div className="relative mb-3">
+                    {playlist.cover_url ? (
+                      <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                    ) : (
+                      <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
+                        <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="text-left min-w-0">
                   <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
                   <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
-                </div>
-              </Link>
-            )
-          ))}
+                </Link>
+              ) : (
+                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
+                  {playlist.cover_url ? (
+                    <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                      <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                    </div>
+                  )}
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                  </div>
+                </Link>
+              )
+            ))
+          )}
         </div>
       )}
 
@@ -186,14 +258,20 @@ export function LibraryPage() {
               <p className="text-sm text-[#8B8B96]">{likedTracks.length} canciones</p>
             </div>
           </div>
-          {likedTracksList.map((track, i) => (
-            track && (
+          {likedTracksList.length === 0 ? (
+            <div className="text-center py-16">
+              <Heart className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
+              <p className="text-[#8B8B96]">Aún no tienes favoritas</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Dale like a las canciones que te gusten</p>
+            </div>
+          ) : (
+            likedTracksList.map((track, i) => (
               <motion.button
                 key={track.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                onClick={() => playTrack(track, likedTracksList as typeof tracks)}
+                onClick={() => playTrack(track, likedTracksList)}
                 className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors group text-left"
               >
                 <span className="w-6 text-center text-sm text-[#8B8B96] font-mono">{i + 1}</span>
@@ -204,14 +282,7 @@ export function LibraryPage() {
                 </div>
                 <span className="text-xs text-[#8B8B96] font-mono">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
               </motion.button>
-            )
-          ))}
-          {likedTracks.length === 0 && (
-            <div className="text-center py-16">
-              <Heart className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
-              <p className="text-[#8B8B96]">Silencio.</p>
-              <p className="text-sm text-[#8B8B96]/60 mt-1">Añade algo para romperlo.</p>
-            </div>
+            ))
           )}
         </div>
       )}
@@ -223,37 +294,38 @@ export function LibraryPage() {
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'
             : 'space-y-1'
         )}>
-          {playlists.slice(0, 4).map(item => (
-            view === 'grid' ? (
-              <div key={item.id} className="group cursor-pointer">
-                <div className="relative mb-3">
-                  {item.cover_url ? (
-                    <img src={item.cover_url} alt={item.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                  ) : (
-                    <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
-                      <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm font-medium truncate text-[#F5F5F7]">{item.title}</p>
-                <p className="text-xs text-[#8B8B96] truncate">{item.description || 'Playlist'}</p>
-              </div>
-            ) : (
-              <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                {item.cover_url ? (
-                  <img src={item.cover_url} alt={item.title} className="w-12 h-12 rounded object-cover" />
-                ) : (
-                  <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center">
-                    <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+          {loading ? (
+            <div className="col-span-full text-center py-16">
+              <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[#8B8B96]">Cargando...</p>
+            </div>
+          ) : albumsList.length === 0 ? (
+            <div className="col-span-full text-center py-16">
+              <Disc3 className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
+              <p className="text-[#8B8B96]">Aún no tienes álbumes</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Empieza a escuchar música</p>
+            </div>
+          ) : (
+            albumsList.map(album => (
+              view === 'grid' ? (
+                <div key={album.id} className="group cursor-pointer">
+                  <div className="relative mb-3">
+                    <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
                   </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-[#F5F5F7]">{item.title}</p>
-                  <p className="text-xs text-[#8B8B96]">{item.description || 'Playlist'}</p>
+                  <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{album.artist}</p>
                 </div>
-              </div>
-            )
-          ))}
+              ) : (
+                <div key={album.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
+                  <img src={album.cover} alt={album.title} className="w-12 h-12 rounded object-cover" />
+                  <div>
+                    <p className="text-sm font-medium text-[#F5F5F7]">{album.title}</p>
+                    <p className="text-xs text-[#8B8B96]">{album.artist}</p>
+                  </div>
+                </div>
+              )
+            ))
+          )}
         </div>
       )}
 
@@ -264,29 +336,36 @@ export function LibraryPage() {
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'
             : 'space-y-1'
         )}>
-          {(() => {
-            const seen = new Set<string>();
-            const uniqueArtists = tracks.filter(t => {
-              if (seen.has(t.artistId)) return false;
-              seen.add(t.artistId);
-              return true;
-            }).slice(0, 10);
-            return uniqueArtists.map((track) => view === 'grid' ? (
-              <Link key={track.artistId} to={`/artist/${track.artistId}`} className="group cursor-pointer">
-                <img src={track.cover} alt={track.artist} className="w-full aspect-square rounded-full object-cover shadow-lg mb-2 ring-1 ring-[#2A2A35]" />
-                <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{track.artist}</p>
-                <p className="text-xs text-[#8B8B96] text-center">Artista</p>
-              </Link>
-            ) : (
-              <Link key={track.artistId} to={`/artist/${track.artistId}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                <img src={track.cover} alt={track.artist} className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <p className="text-sm font-medium text-[#F5F5F7]">{track.artist}</p>
-                  <p className="text-xs text-[#8B8B96]">Artista</p>
-                </div>
-              </Link>
-            ));
-          })()}
+          {loading ? (
+            <div className="col-span-full text-center py-16">
+              <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[#8B8B96]">Cargando...</p>
+            </div>
+          ) : artistsList.length === 0 ? (
+            <div className="col-span-full text-center py-16">
+              <Users className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
+              <p className="text-[#8B8B96]">Aún no tienes artistas</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Empieza a escuchar música</p>
+            </div>
+          ) : (
+            artistsList.map(artist => (
+              view === 'grid' ? (
+                <Link key={artist.id} to={`/artist/${artist.id}`} className="group cursor-pointer">
+                  <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-2 ring-1 ring-[#2A2A35]" />
+                  <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
+                  <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+                </Link>
+              ) : (
+                <Link key={artist.id} to={`/artist/${artist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
+                  <img src={artist.image} alt={artist.name} className="w-12 h-12 rounded-full object-cover" />
+                  <div>
+                    <p className="text-sm font-medium text-[#F5F5F7]">{artist.name}</p>
+                    <p className="text-xs text-[#8B8B96]">Artista</p>
+                  </div>
+                </Link>
+              )
+            ))
+          )}
         </div>
       )}
 
