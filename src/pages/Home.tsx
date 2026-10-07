@@ -1,10 +1,14 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { tracks, albums, playlists, artists, getTrackById } from '../lib/mockData';
+import { getPopularTracks, getPopularArtists } from '../lib/jamendo';
+import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
 import { getGreeting } from '../lib/utils';
 import { Link } from 'react-router-dom';
+import { Track, Artist } from '../types';
 
 const container = {
   hidden: { opacity: 0 },
@@ -18,15 +22,56 @@ const item = {
 export function Home() {
   const { playTrack } = usePlayerStore();
   const recentlyPlayed = useLibraryStore(s => s.recentlyPlayed);
+  
+  const [popularTracks, setPopularTracks] = useState<Track[]>([]);
+  const [popularArtists, setPopularArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [tracks, artists] = await Promise.all([
+          getPopularTracks(12),
+          getPopularArtists(6)
+        ]);
+        
+        setPopularTracks(jamendoTracksToTracks(tracks));
+        setPopularArtists(jamendoArtistsToArtists(artists));
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast.error('Algo se desafinó. Intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, []);
 
   const recentTracks = recentlyPlayed
-    .map(id => getTrackById(id))
+    .map(id => popularTracks.find(t => t.id === id))
     .filter(Boolean)
     .slice(0, 6);
 
-  const dailyMix = tracks.slice(0, 6);
-  const discoveries = tracks.slice(6, 12);
-  const topArtists = artists.slice(0, 6);
+  const dailyMix = popularTracks.slice(0, 6);
+  const discoveries = popularTracks.slice(6, 12);
+
+  if (loading) {
+    return (
+      <div className="pb-8">
+        <div className="mb-8">
+          <div className="h-4 w-32 bg-[#131318] rounded mb-2 animate-pulse" />
+          <div className="h-10 w-96 bg-[#131318] rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-16 bg-[#131318] rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="pb-8">
@@ -49,7 +94,7 @@ export function Home() {
                 key={track.id}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => playTrack(track, tracks)}
+                onClick={() => playTrack(track, popularTracks)}
                 className="flex items-center gap-3 bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] hover:border-[#7C3AED]/30 rounded-xl overflow-hidden transition-all duration-200 group"
               >
                 <img src={track.cover} alt={track.title} className="w-12 h-12 md:w-16 md:h-16 object-cover" />
@@ -63,11 +108,10 @@ export function Home() {
         </motion.div>
       )}
 
-      {/* Hecho para ti — Daily Mix */}
+      {/* Hecho para ti — Popular */}
       <motion.section variants={item} className="mb-10">
         <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Hecho para ti</h2>
-          <button className="text-xs text-[#8B8B96] hover:text-[#F5F5F7] transition-colors uppercase tracking-wider font-medium">Ver todo</button>
+          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {dailyMix.map(track => (
@@ -90,33 +134,10 @@ export function Home() {
         </div>
       </motion.section>
 
-      {/* Playlists curadas */}
-      <motion.section variants={item} className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Playlists de Aural</h2>
-          <button className="text-xs text-[#8B8B96] hover:text-[#F5F5F7] transition-colors uppercase tracking-wider font-medium">Ver todo</button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {playlists.slice(0, 6).map(playlist => (
-            <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group">
-              <motion.div whileHover={{ y: -4 }} className="relative mb-3">
-                <img src={playlist.cover} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
-                </div>
-              </motion.div>
-              <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-              <p className="text-xs text-[#8B8B96] truncate">{playlist.description}</p>
-            </Link>
-          ))}
-        </div>
-      </motion.section>
-
       {/* Descubrimientos */}
       <motion.section variants={item} className="mb-10">
         <div className="flex items-baseline justify-between mb-4">
           <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Descubrimientos</h2>
-          <button className="text-xs text-[#8B8B96] hover:text-[#F5F5F7] transition-colors uppercase tracking-wider font-medium">Ver todo</button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {discoveries.map(track => (
@@ -142,11 +163,10 @@ export function Home() {
       {/* Artistas populares */}
       <motion.section variants={item} className="mb-10">
         <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Tus artistas</h2>
-          <button className="text-xs text-[#8B8B96] hover:text-[#F5F5F7] transition-colors uppercase tracking-wider font-medium">Ver todo</button>
+          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {topArtists.map(artist => (
+          {popularArtists.map(artist => (
             <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
               <motion.div whileHover={{ y: -4 }} className="relative mb-3">
                 <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
@@ -157,28 +177,6 @@ export function Home() {
               <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
               <p className="text-xs text-[#8B8B96] text-center">Artista</p>
             </Link>
-          ))}
-        </div>
-      </motion.section>
-
-      {/* Nuevos lanzamientos */}
-      <motion.section variants={item} className="mb-8">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Nuevos lanzamientos</h2>
-          <button className="text-xs text-[#8B8B96] hover:text-[#F5F5F7] transition-colors uppercase tracking-wider font-medium">Ver todo</button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {albums.slice(0, 6).map(album => (
-            <motion.div key={album.id} whileHover={{ y: -4 }} className="group cursor-pointer">
-              <div className="relative mb-3">
-                <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
-                </div>
-              </div>
-              <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
-              <p className="text-xs text-[#8B8B96] truncate">{album.artist} · {album.year}</p>
-            </motion.div>
           ))}
         </div>
       </motion.section>
