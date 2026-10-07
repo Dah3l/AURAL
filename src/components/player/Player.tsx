@@ -126,7 +126,7 @@ export function Player() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-0 z-50 bg-[#08080C] flex flex-col"
+            className="fixed inset-0 z-[60] bg-[#08080C] flex flex-col"
           >
             <div className="flex items-center justify-between p-4">
               <button onClick={toggleExpanded} className="p-2 rounded-full hover:bg-[#1E1E26]">
@@ -136,8 +136,11 @@ export function Player() {
                 <AuralLogo size={18} />
                 <span className="text-sm text-[#8B8B96] font-medium">Reproduciendo</span>
               </div>
-              <button onClick={toggleQueue} className="p-2 rounded-full hover:bg-[#1E1E26]">
-                <ListMusic className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+              <button 
+                onClick={toggleQueue} 
+                className={`p-2 rounded-full hover:bg-[#1E1E26] transition-colors ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96]'}`}
+              >
+                <ListMusic className="w-5 h-5" strokeWidth={1.75} />
               </button>
             </div>
 
@@ -203,7 +206,7 @@ export function Player() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-20 w-full sm:w-80 bg-[#08080C] border-l border-[#2A2A35] z-40 flex flex-col overflow-hidden"
+            className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-[#08080C] border-l border-[#2A2A35] z-[70] flex flex-col overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 border-b border-[#2A2A35]">
               <h3 className="font-semibold text-[#F5F5F7]">Cola</h3>
