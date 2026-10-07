@@ -33,7 +33,7 @@ export function MainLayout() {
           <TopBar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
           <div
             id="main-content"
-            className="flex-1 overflow-y-auto px-4 md:px-6 pb-28 md:pb-4"
+            className="flex-1 overflow-y-auto px-4 md:px-6 pb-36 md:pb-4"
           >
             <Outlet />
           </div>
