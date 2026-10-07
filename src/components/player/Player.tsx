@@ -141,17 +141,17 @@ export function Player() {
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-8">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 md:px-8">
               <motion.img
                 key={currentTrack.id}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 src={currentTrack.cover}
                 alt={currentTrack.title}
-                className="w-64 h-64 md:w-80 md:h-80 rounded-2xl object-cover shadow-2xl mb-8 ring-1 ring-[#2A2A35]"
+                className="w-56 h-56 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-2xl object-cover shadow-2xl mb-6 md:mb-8 ring-1 ring-[#2A2A35]"
               />
-              <h2 className="text-2xl font-bold mb-1 text-[#F5F5F7]">{currentTrack.title}</h2>
-              <p className="text-[#8B8B96] text-lg">{currentTrack.artist}</p>
+              <h2 className="text-xl sm:text-2xl font-bold mb-1 text-[#F5F5F7] text-center px-4">{currentTrack.title}</h2>
+              <p className="text-[#8B8B96] text-base sm:text-lg text-center">{currentTrack.artist}</p>
             </div>
 
             <div className="px-8 pb-8">
@@ -195,7 +195,7 @@ export function Player() {
         )}
       </AnimatePresence>
 
-      {/* Cola de reproducción */}
+      {/* Cola de reproducción - Mobile First */}
       <AnimatePresence>
         {showQueue && (
           <motion.div
@@ -203,12 +203,12 @@ export function Player() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-20 w-80 bg-[#08080C] border-l border-[#2A2A35] z-40 flex flex-col overflow-hidden"
+            className="fixed right-0 top-0 bottom-20 w-full sm:w-80 bg-[#08080C] border-l border-[#2A2A35] z-40 flex flex-col overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 border-b border-[#2A2A35]">
               <h3 className="font-semibold text-[#F5F5F7]">Cola</h3>
-              <button onClick={toggleQueue} className="p-1 rounded-full hover:bg-[#1E1E26]">
-                <X className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+              <button onClick={toggleQueue} className="p-2 rounded-full hover:bg-[#1E1E26]">
+                <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -247,36 +247,60 @@ export function Player() {
         )}
       </AnimatePresence>
 
-      {/* Barra del reproductor */}
-      <div className="h-20 bg-[#08080C]/95 backdrop-blur-xl border-t border-[#2A2A35] px-2 md:px-4 flex items-center gap-2 md:gap-4">
-        {/* Info track */}
-        <div className="flex items-center gap-3 w-1/4 min-w-0">
-          <motion.img
-            key={currentTrack.id}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            src={currentTrack.cover}
-            alt={currentTrack.title}
-            className="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover cursor-pointer ring-1 ring-[#2A2A35]"
-            onClick={toggleExpanded}
+      {/* Barra del reproductor - Mobile First */}
+      <div className="bg-[#08080C]/95 backdrop-blur-xl border-t border-[#2A2A35]">
+        {/* Barra de progreso compacta en mobile */}
+        <div className="px-3 pt-2 md:hidden">
+          <input
+            type="range"
+            min={0}
+            max={duration || 1}
+            value={progress}
+            onChange={handleProgressChange}
+            className="w-full h-1"
+            style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
           />
-          <div className="min-w-0 hidden sm:block">
-            <p className="text-sm font-medium truncate hover:text-[#A78BFA] cursor-pointer transition-colors" onClick={toggleExpanded}>
-              {currentTrack.title}
-            </p>
-            <p className="text-xs text-[#8B8B96] truncate">{currentTrack.artist}</p>
+          <div className="flex justify-between text-[10px] text-[#8B8B96] mt-0.5 font-mono">
+            <span>{formatTime(progress)}</span>
+            <span>{formatTime(duration)}</span>
           </div>
-          <button onClick={() => toggleLike(currentTrack.id)} className="hidden sm:block shrink-0">
-            <Heart
-              className={`w-4 h-4 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
-              strokeWidth={1.75}
-            />
-          </button>
         </div>
 
-        {/* Controles */}
-        <div className="flex-1 flex flex-col items-center justify-center max-w-xl">
-          <div className="flex items-center gap-3 md:gap-5 mb-1">
+        {/* Controles principales */}
+        <div className="h-16 md:h-20 px-3 md:px-4 flex items-center gap-3">
+          {/* Info track - Mobile */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 md:w-1/4">
+            <motion.img
+              key={currentTrack.id}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={currentTrack.cover}
+              alt={currentTrack.title}
+              className="w-11 h-11 md:w-14 md:h-14 rounded-lg object-cover cursor-pointer ring-1 ring-[#2A2A35] shrink-0"
+              onClick={toggleExpanded}
+            />
+            <div className="min-w-0 flex-1 md:hidden">
+              <p className="text-sm font-medium truncate text-[#F5F5F7]" onClick={toggleExpanded}>
+                {currentTrack.title}
+              </p>
+              <p className="text-xs text-[#8B8B96] truncate">{currentTrack.artist}</p>
+            </div>
+            <div className="min-w-0 hidden md:block">
+              <p className="text-sm font-medium truncate hover:text-[#A78BFA] cursor-pointer transition-colors" onClick={toggleExpanded}>
+                {currentTrack.title}
+              </p>
+              <p className="text-xs text-[#8B8B96] truncate">{currentTrack.artist}</p>
+            </div>
+            <button onClick={() => toggleLike(currentTrack.id)} className="hidden sm:block shrink-0">
+              <Heart
+                className={`w-4 h-4 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+                strokeWidth={1.75}
+              />
+            </button>
+          </div>
+
+          {/* Controles - Mobile & Desktop */}
+          <div className="flex items-center gap-4 md:gap-5 md:flex-1 md:flex-col md:justify-center md:max-w-xl">
             <button
               onClick={toggleShuffle}
               className={`hidden md:block transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
@@ -284,20 +308,20 @@ export function Player() {
               <Shuffle className="w-4 h-4" strokeWidth={1.75} />
             </button>
             <button onClick={prevTrack} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
-              <SkipBack className="w-4 h-4 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
+              <SkipBack className="w-5 h-5 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
             </button>
             <button
               onClick={togglePlay}
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 transition-transform"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 transition-transform"
             >
               {isPlaying ? (
-                <Pause className="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
+                <Pause className="w-5 h-5 md:w-5 md:h-5 text-white fill-white" />
               ) : (
-                <Play className="w-4 h-4 md:w-5 md:h-5 text-white fill-white ml-0.5" />
+                <Play className="w-5 h-5 md:w-5 md:h-5 text-white fill-white ml-0.5" />
               )}
             </button>
             <button onClick={nextTrack} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
-              <SkipForward className="w-4 h-4 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
+              <SkipForward className="w-5 h-5 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
             </button>
             <button
               onClick={cycleRepeat}
@@ -306,42 +330,34 @@ export function Player() {
               {repeat === 'one' ? <Repeat1 className="w-4 h-4" strokeWidth={1.75} /> : <Repeat className="w-4 h-4" strokeWidth={1.75} />}
             </button>
           </div>
-          <div className="w-full flex items-center gap-2">
-            <span className="text-[10px] text-[#8B8B96] w-8 text-right font-mono">{formatTime(progress)}</span>
+
+          {/* Extras - Desktop only */}
+          <div className="hidden md:flex w-1/4 items-center justify-end gap-3">
+            <button onClick={toggleQueue} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
+              <ListMusic className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+            <button onClick={toggleExpanded} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
+              <Maximize2 className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+            <button onClick={toggleMute} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
+              <VolumeIcon className="w-4 h-4" strokeWidth={1.75} />
+            </button>
             <input
               type="range"
               min={0}
-              max={duration || 1}
-              value={progress}
-              onChange={handleProgressChange}
-              className="flex-1 h-1"
-              style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-20 h-1"
+              style={{ background: `linear-gradient(to right, #7C3AED ${(isMuted ? 0 : volume) * 100}%, #2A2A35 ${(isMuted ? 0 : volume) * 100}%)` }}
             />
-            <span className="text-[10px] text-[#8B8B96] w-8 font-mono">{formatTime(duration)}</span>
           </div>
-        </div>
 
-        {/* Volumen y extras */}
-        <div className="w-1/4 flex items-center justify-end gap-2 md:gap-3">
-          <button onClick={toggleQueue} className="hidden md:block text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
-            <ListMusic className="w-4 h-4" strokeWidth={1.75} />
+          {/* Expand button - Mobile only */}
+          <button onClick={toggleExpanded} className="md:hidden text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
+            <Maximize2 className="w-5 h-5" strokeWidth={1.75} />
           </button>
-          <button onClick={toggleExpanded} className="hidden md:block text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
-            <Maximize2 className="w-4 h-4" strokeWidth={1.75} />
-          </button>
-          <button onClick={toggleMute} className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors">
-            <VolumeIcon className="w-4 h-4" strokeWidth={1.75} />
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={isMuted ? 0 : volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="hidden md:block w-20 h-1"
-            style={{ background: `linear-gradient(to right, #7C3AED ${(isMuted ? 0 : volume) * 100}%, #2A2A35 ${(isMuted ? 0 : volume) * 100}%)` }}
-          />
         </div>
       </div>
     </>

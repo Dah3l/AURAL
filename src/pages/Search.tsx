@@ -53,15 +53,15 @@ export function SearchPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
       {/* Input */}
-      <div className="relative mb-6 max-w-lg">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+      <div className="relative mb-5 md:mb-6 max-w-lg">
+        <SearchIcon className="absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Busca canciones, artistas..."
           autoFocus
-          className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#131318] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96] focus:outline-none focus:border-[#7C3AED]/50 focus:bg-[#1E1E26] transition-all"
+          className="w-full pl-10 md:pl-11 pr-4 py-2.5 md:py-3 rounded-xl bg-[#131318] border border-[#2A2A35] text-sm md:text-base text-[#F5F5F7] placeholder:text-[#8B8B96] focus:outline-none focus:border-[#7C3AED]/50 focus:bg-[#1E1E26] transition-all"
         />
       </div>
 
@@ -97,8 +97,8 @@ export function SearchPage() {
 
           {tracks.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold mb-3 text-[#F5F5F7]">Canciones</h2>
-              <div className="space-y-1">
+              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">Canciones</h2>
+              <div className="space-y-0.5 md:space-y-1">
                 {tracks.slice(0, 10).map((track, i) => (
                   <motion.button
                     key={track.id}
@@ -106,10 +106,10 @@ export function SearchPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                     onClick={() => playTrack(track, tracks)}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors group text-left"
+                    className="w-full flex items-center gap-2.5 md:gap-3 p-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group text-left"
                   >
-                    <div className="relative w-10 h-10 shrink-0">
-                      <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover" />
+                    <div className="relative w-10 h-10 md:w-11 md:h-11 shrink-0">
+                      <img src={track.cover} alt={track.title} className="w-full h-full rounded object-cover" />
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
                         <Play className="w-4 h-4 text-white fill-white" strokeWidth={1.75} />
                       </div>
@@ -118,7 +118,7 @@ export function SearchPage() {
                       <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
                       <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
                     </div>
-                    <span className="text-xs text-[#8B8B96] font-mono">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
+                    <span className="text-xs text-[#8B8B96] font-mono shrink-0">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
                   </motion.button>
                 ))}
               </div>
@@ -127,8 +127,8 @@ export function SearchPage() {
 
           {artists.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold mb-3 text-[#F5F5F7]">Artistas</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">Artistas</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
                 {artists.slice(0, 6).map(artist => (
                   <motion.div
                     key={artist.id}
@@ -136,9 +136,9 @@ export function SearchPage() {
                     animate={{ opacity: 1, y: 0 }}
                   >
                     <Link to={`/artist/${artist.id}`} className="group cursor-pointer block">
-                      <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-2 ring-1 ring-[#2A2A35]" />
-                      <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
-                      <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+                      <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-1.5 md:mb-2 ring-1 ring-[#2A2A35]" />
+                      <p className="text-xs sm:text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
+                      <p className="text-[10px] sm:text-xs text-[#8B8B96] text-center">Artista</p>
                     </Link>
                   </motion.div>
                 ))}

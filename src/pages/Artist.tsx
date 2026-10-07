@@ -106,15 +106,15 @@ export function ArtistPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Hero */}
-      <div className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 px-4 md:px-6 pt-16 pb-8 mb-8">
+      <div className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 px-4 md:px-6 pt-12 md:pt-16 pb-6 md:pb-8 mb-6 md:mb-8">
         <div className="absolute inset-0 bg-gradient-to-b from-[#7C3AED]/20 via-[#7C3AED]/5 to-transparent" />
-        <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6">
+        <div className="relative flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6">
           <motion.img
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             src={artist.image}
             alt={artist.name}
-            className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover shadow-2xl ring-1 ring-[#2A2A35]"
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full object-cover shadow-2xl ring-1 ring-[#2A2A35]"
           />
           <div className="text-center md:text-left">
             <div className="flex items-center gap-2 justify-center md:justify-start mb-1">
@@ -123,40 +123,40 @@ export function ArtistPage() {
                 {artist.verified ? 'Artista verificado' : 'Artista'}
               </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2 text-[#F5F5F7]">{artist.name}</h1>
-            <p className="text-[#8B8B96]">{formatNumber(artist.monthlyListeners)} oyentes mensuales</p>
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-1.5 md:mb-2 text-[#F5F5F7]">{artist.name}</h1>
+            <p className="text-sm md:text-base text-[#8B8B96]">{formatNumber(artist.monthlyListeners)} oyentes mensuales</p>
           </div>
         </div>
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-2.5 md:gap-3 mb-6 md:mb-8">
         <button
           onClick={handlePlayAll}
-          className="w-14 h-14 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 transition-transform"
+          className="w-12 h-12 md:w-14 md:h-14 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 transition-transform"
         >
           {isCurrentArtist && isPlaying ? (
-            <Pause className="w-6 h-6 text-white fill-white" strokeWidth={1.75} />
+            <Pause className="w-5 h-5 md:w-6 md:h-6 text-white fill-white" strokeWidth={1.75} />
           ) : (
-            <Play className="w-6 h-6 text-white fill-white ml-0.5" strokeWidth={1.75} />
+            <Play className="w-5 h-5 md:w-6 md:h-6 text-white fill-white ml-0.5" strokeWidth={1.75} />
           )}
         </button>
-        <button className="px-6 py-2 rounded-full border border-[#2A2A35] text-sm font-medium text-[#F5F5F7] hover:bg-[#1E1E26] hover:border-[#7C3AED]/50 transition-all">
+        <button className="px-4 md:px-6 py-2 rounded-full border border-[#2A2A35] text-sm font-medium text-[#F5F5F7] hover:bg-[#1E1E26] hover:border-[#7C3AED]/50 transition-all">
           Seguir
         </button>
-        <button className="p-2 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+        <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
           <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
-        <button className="p-2 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+        <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
           <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
         </button>
       </div>
 
       {/* Populares */}
       {topTracks.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold tracking-tight mb-4 text-[#F5F5F7]">Populares</h2>
-          <div className="space-y-1">
+        <section className="mb-8 md:mb-10">
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight mb-3 md:mb-4 text-[#F5F5F7]">Populares</h2>
+          <div className="space-y-0 md:space-y-1">
             {topTracks.map((track, i) => (
               <motion.div
                 key={track.id}
@@ -164,27 +164,27 @@ export function ArtistPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => playTrack(track, artistTracks)}
-                className="flex items-center gap-4 px-4 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors group cursor-pointer"
+                className="flex items-center gap-2.5 md:gap-4 px-2 md:px-4 py-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group cursor-pointer"
               >
-                <span className="w-6 text-center text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
+                <span className="w-5 md:w-6 text-center text-xs md:text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
                 <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block" strokeWidth={1.75} />
-                <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover" />
+                <img src={track.cover} alt={track.title} className="w-10 h-10 md:w-11 md:h-11 rounded object-cover shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
                     {track.title}
                   </p>
-                  <p className="text-xs text-[#8B8B96]">{formatNumber(track.playCount)} reproducciones</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{formatNumber(track.playCount)} reproducciones</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 p-1"
                 >
                   <Heart
                     className={`w-4 h-4 ${isLiked(track.id) ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96]'}`}
                     strokeWidth={1.75}
                   />
                 </button>
-                <span className="text-sm text-[#8B8B96] font-mono">
+                <span className="text-xs md:text-sm text-[#8B8B96] font-mono shrink-0">
                   {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
                 </span>
               </motion.div>
