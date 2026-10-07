@@ -169,3 +169,57 @@ export async function getAlbumTracks(albumId: string): Promise<JamendoTrack[]> {
     audioformat: 'mp32'
   });
 }
+
+// Nuevos endpoints para funcionalidades avanzadas
+export async function getFeaturedTracks(limit = 10): Promise<JamendoTrack[]> {
+  return fetchJamendo<JamendoTrack>('/tracks/', {
+    limit: limit.toString(),
+    order: 'popularity_week',
+    include: 'musicinfo',
+    audioformat: 'mp32',
+    imagesize: '300'
+  });
+}
+
+export async function getNewReleases(limit = 10): Promise<JamendoTrack[]> {
+  return fetchJamendo<JamendoTrack>('/tracks/', {
+    limit: limit.toString(),
+    order: 'releasedate_desc',
+    include: 'musicinfo',
+    audioformat: 'mp32',
+    imagesize: '300'
+  });
+}
+
+export async function getTracksByGenre(genre: string, limit = 20): Promise<JamendoTrack[]> {
+  return fetchJamendo<JamendoTrack>('/tracks/', {
+    limit: limit.toString(),
+    tags: genre,
+    order: 'popularity_total',
+    include: 'musicinfo',
+    audioformat: 'mp32',
+    imagesize: '300'
+  });
+}
+
+export async function getArtistInfo(artistId: string): Promise<JamendoArtist | null> {
+  try {
+    const artists = await fetchJamendo<JamendoArtist>('/artists/', {
+      id: artistId
+    });
+    return artists[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getAlbumInfo(albumId: string): Promise<JamendoAlbum | null> {
+  try {
+    const albums = await fetchJamendo<JamendoAlbum>('/albums/', {
+      id: albumId
+    });
+    return albums[0] || null;
+  } catch {
+    return null;
+  }
+}
