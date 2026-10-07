@@ -21,7 +21,7 @@ export function MainLayout() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#0A0A0A] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#08080C] overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <div className="hidden md:block">
           <Sidebar

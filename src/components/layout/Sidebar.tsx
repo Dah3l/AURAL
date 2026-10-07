@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Home, Search, Library, Plus, Music2, Heart,
-  ChevronLeft, ChevronRight, ListMusic, Disc3
+  ChevronLeft, ChevronRight, ListMusic
 } from 'lucide-react';
 import { useLibraryStore } from '../../store/libraryStore';
+import { AuralLogo } from '../shared/AuralLogo';
 import { cn } from '../../lib/utils';
 
 interface SidebarProps {
@@ -19,41 +20,45 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [showPlaylists, setShowPlaylists] = useState(true);
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: Search, label: 'Search', path: '/search' },
-    { icon: Library, label: 'Your Library', path: '/library' },
+    { icon: Home, label: 'Inicio', path: '/' },
+    { icon: Search, label: 'Buscar', path: '/search' },
+    { icon: Library, label: 'Tu biblioteca', path: '/library' },
   ];
 
   return (
     <motion.aside
       initial={false}
-      animate={{ width: collapsed ? 72 : 280 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="h-full flex flex-col bg-[#0A0A0A] border-r border-white/5 relative"
+      animate={{ width: collapsed ? 72 : 260 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="h-full flex flex-col bg-[#08080C] border-r border-[#2A2A35] relative"
     >
-      {/* Logo */}
+      {/* Logo + wordmark */}
       <div className="p-4 flex items-center gap-3">
-        {!collapsed && (
+        {collapsed ? (
+          <div className="mx-auto">
+            <AuralLogo size={32} />
+          </div>
+        ) : (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2.5"
           >
-            <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center">
-              <Disc3 className="w-5 h-5 text-white" />
+            <AuralLogo size={28} />
+            <div className="flex flex-col leading-none">
+              <span className="font-semibold text-[17px] tracking-tight text-[#F5F5F7]">
+                aural
+              </span>
+              <span className="text-[10px] text-[#8B8B96] tracking-wide mt-0.5">
+                el sonido, sin ruido
+              </span>
             </div>
-            <span className="font-bold text-lg tracking-tight">Soundwave</span>
           </motion.div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center mx-auto">
-            <Disc3 className="w-5 h-5 text-white" />
-          </div>
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Navegación */}
       <nav className="px-2 mt-2">
         {navItems.map(item => {
           const isActive = location.pathname === item.path;
@@ -64,33 +69,33 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-200',
                 isActive
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  ? 'bg-[#7C3AED]/15 text-[#A78BFA]'
+                  : 'text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#1E1E26]'
               )}
             >
-              <item.icon className={cn('w-5 h-5 shrink-0', collapsed && 'mx-auto')} />
+              <item.icon className={cn('w-5 h-5 shrink-0', collapsed && 'mx-auto')} strokeWidth={1.75} />
               {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Divider */}
-      <div className="mx-4 my-3 border-t border-white/5" />
+      {/* Divisor */}
+      <div className="mx-4 my-3 border-t border-[#2A2A35]" />
 
-      {/* Playlists section */}
+      {/* Playlists */}
       {!collapsed && (
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="px-4 flex items-center justify-between mb-2">
             <button
               onClick={() => setShowPlaylists(!showPlaylists)}
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
             >
-              <ListMusic className="w-4 h-4" />
+              <ListMusic className="w-4 h-4" strokeWidth={1.75} />
               <span className="text-sm font-medium">Playlists</span>
             </button>
-            <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
-              <Plus className="w-4 h-4" />
+            <button className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+              <Plus className="w-4 h-4" strokeWidth={1.75} />
             </button>
           </div>
 
@@ -99,30 +104,33 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               {/* Liked Songs */}
               <Link
                 to="/library"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors"
               >
-                <div className="w-8 h-8 rounded gradient-accent flex items-center justify-center shrink-0">
-                  <Heart className="w-4 h-4 text-white fill-white" />
+                <div className="w-8 h-8 rounded gradient-aura flex items-center justify-center shrink-0">
+                  <Heart className="w-4 h-4 text-white fill-white" strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">Liked Songs</p>
-                  <p className="text-xs text-white/40">Playlist</p>
+                  <p className="text-sm font-medium truncate text-[#F5F5F7]">Tus favoritas</p>
+                  <p className="text-xs text-[#8B8B96]">Playlist</p>
                 </div>
               </Link>
 
-              {/* User Playlists */}
               {playlists.slice(0, 8).map(playlist => (
                 <Link
                   key={playlist.id}
                   to={`/playlist/${playlist.id}`}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors"
                 >
-                  <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center shrink-0">
-                    <Music2 className="w-4 h-4 text-white/60" />
+                  <div className="w-8 h-8 rounded bg-[#1E1E26] flex items-center justify-center shrink-0 overflow-hidden">
+                    {playlist.cover ? (
+                      <img src={playlist.cover} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Music2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+                    )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{playlist.title}</p>
-                    <p className="text-xs text-white/40">Playlist • {playlist.owner}</p>
+                    <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">Playlist · {playlist.owner}</p>
                   </div>
                 </Link>
               ))}
@@ -131,24 +139,25 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
       )}
 
-      {/* Collapse button */}
+      {/* Botón colapsar */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#1A1A1A] border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors z-10"
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#131318] border border-[#2A2A35] flex items-center justify-center hover:bg-[#1E1E26] hover:border-[#7C3AED]/50 transition-all z-10"
+        aria-label="Colapsar sidebar"
       >
         {collapsed ? (
-          <ChevronRight className="w-3 h-3 text-white/60" />
+          <ChevronRight className="w-3 h-3 text-[#8B8B96]" />
         ) : (
-          <ChevronLeft className="w-3 h-3 text-white/60" />
+          <ChevronLeft className="w-3 h-3 text-[#8B8B96]" />
         )}
       </button>
 
-      {/* Now Playing indicator */}
+      {/* Footer — promesa de marca */}
       {!collapsed && (
-        <div className="p-3 border-t border-white/5">
-          <div className="flex items-center gap-2 text-xs text-white/40">
-            <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-            <span>Ad-free • Unlimited skips</span>
+        <div className="p-3 border-t border-[#2A2A35]">
+          <div className="flex items-center gap-2 text-[11px] text-[#8B8B96]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-pulse" />
+            <span>Sin anuncios. Sin límites.</span>
           </div>
         </div>
       )}
