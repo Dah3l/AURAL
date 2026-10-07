@@ -18,14 +18,14 @@ export function Player() {
     setVolume, toggleMute, toggleShuffle, cycleRepeat,
     toggleQueue, toggleExpanded, playTrack,
   } = usePlayerStore();
-  const { toggleLike, isLiked, addToRecentlyPlayed } = useLibraryStore();
+  const { toggleLike, isLiked, addToHistory } = useLibraryStore();
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
     audio.src = currentTrack.audioUrl;
     if (isPlaying) audio.play().catch(() => {});
-    addToRecentlyPlayed(currentTrack.id);
+    addToHistory(currentTrack.id);
   }, [currentTrack?.id]);
 
   useEffect(() => {

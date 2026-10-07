@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Grid3X3, List, Music2, Disc3, Users, Heart, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Grid3X3, List, Music2, Disc3, Users, Heart, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { tracks, getTrackById } from '../lib/mockData';
 import { cn } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 type Tab = 'playlists' | 'albums' | 'artists' | 'liked';
 type View = 'grid' | 'list';
@@ -13,8 +14,14 @@ type View = 'grid' | 'list';
 export function LibraryPage() {
   const [activeTab, setActiveTab] = useState<Tab>('playlists');
   const [view, setView] = useState<View>('grid');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
+  const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
+  const [creating, setCreating] = useState(false);
+  
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist } = useLibraryStore();
+  const navigate = useNavigate();
 
   const tabs = [
     { key: 'playlists' as Tab, label: 'Playlists', icon: Music2 },
@@ -24,6 +31,37 @@ export function LibraryPage() {
   ];
 
   const likedTracksList = likedTracks.map(id => getTrackById(id)).filter(Boolean);
+
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistTitle.trim()) {
+      toast.error('El título es obligatorio');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { error, playlistId } = await createPlaylist(
+        newPlaylistTitle,
+        newPlaylistDescription
+      );
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Playlist creada');
+        setShowCreateModal(false);
+        setNewPlaylistTitle('');
+        setNewPlaylistDescription('');
+        if (playlistId) {
+          navigate(`/playlist/${playlistId}`);
+        }
+      }
+    } catch (error) {
+      toast.error('Algo se desafinó. Intenta de nuevo.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
@@ -41,7 +79,11 @@ export function LibraryPage() {
           >
             {view === 'grid' ? <List className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} /> : <Grid3X3 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />}
           </button>
-          <button className="p-2 rounded-lg bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] transition-all" aria-label="Crear">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="p-2 rounded-lg bg-[#131318] hover:bg-[#1E1E26] border border-[#2A2A35] transition-all" 
+            aria-label="Crear playlist"
+          >
             <Plus className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
           </button>
         </div>
@@ -102,17 +144,29 @@ export function LibraryPage() {
             view === 'grid' ? (
               <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group">
                 <div className="relative mb-3">
-                  <img src={playlist.cover} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  {playlist.cover_url ? (
+                    <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  ) : (
+                    <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
+                      <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                <p className="text-xs text-[#8B8B96] truncate">{playlist.owner} · {playlist.tracks.length} canciones</p>
+                <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
               </Link>
             ) : (
               <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                <img src={playlist.cover} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                {playlist.cover_url ? (
+                  <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                    <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                  </div>
+                )}
                 <div className="text-left min-w-0">
                   <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                  <p className="text-xs text-[#8B8B96] truncate">Playlist · {playlist.owner}</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
                 </div>
               </Link>
             )
@@ -173,17 +227,29 @@ export function LibraryPage() {
             view === 'grid' ? (
               <div key={item.id} className="group cursor-pointer">
                 <div className="relative mb-3">
-                  <img src={item.cover} alt={item.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  {item.cover_url ? (
+                    <img src={item.cover_url} alt={item.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  ) : (
+                    <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
+                      <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm font-medium truncate text-[#F5F5F7]">{item.title}</p>
-                <p className="text-xs text-[#8B8B96] truncate">{item.owner}</p>
+                <p className="text-xs text-[#8B8B96] truncate">{item.description || 'Playlist'}</p>
               </div>
             ) : (
               <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                <img src={item.cover} alt={item.title} className="w-12 h-12 rounded object-cover" />
+                {item.cover_url ? (
+                  <img src={item.cover_url} alt={item.title} className="w-12 h-12 rounded object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center">
+                    <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-medium text-[#F5F5F7]">{item.title}</p>
-                  <p className="text-xs text-[#8B8B96]">{item.owner}</p>
+                  <p className="text-xs text-[#8B8B96]">{item.description || 'Playlist'}</p>
                 </div>
               </div>
             )
@@ -223,6 +289,82 @@ export function LibraryPage() {
           })()}
         </div>
       )}
+
+      {/* Modal de crear playlist */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">Nueva playlist</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={newPlaylistTitle}
+                    onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                    placeholder="Mi playlist"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={newPlaylistDescription}
+                    onChange={(e) => setNewPlaylistDescription(e.target.value)}
+                    placeholder="¿De qué trata esta playlist?"
+                    rows={3}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCreatePlaylist}
+                    disabled={creating || !newPlaylistTitle.trim()}
+                    className="flex-1 py-2.5 rounded-xl gradient-aura-glow text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {creating ? 'Creando...' : 'Crear'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
