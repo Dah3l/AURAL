@@ -1,17 +1,74 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { getPlaylistById, getTrackById } from '../lib/mockData';
+import { getTracksByTag, getPopularTracks } from '../lib/jamendo';
+import { jamendoTracksToTracks } from '../lib/adapters';
 import { formatDuration, formatTime } from '../lib/utils';
+import { Track } from '../types';
+
+// Mapeo de playlists mock a tags de Jamendo
+const playlistTagMap: Record<string, string> = {
+  'p1': 'chill',
+  'p2': 'electronic',
+  'p3': 'indie',
+  'p4': 'ambient',
+  'p5': 'rock',
+  'p6': 'acoustic',
+};
 
 export function PlaylistPage() {
   const { id } = useParams<{ id: string }>();
-  const playlist = getPlaylistById(id || '');
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked } = useLibraryStore();
+  const { toggleLike, isLiked, playlists } = useLibraryStore();
+
+  const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const playlist = playlists.find(p => p.id === id);
+
+  useEffect(() => {
+    async function loadPlaylist() {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Obtener tag de la playlist o usar popular tracks por defecto
+        const tag = playlistTagMap[id];
+        const tracks = tag 
+          ? await getTracksByTag(tag, 20)
+          : await getPopularTracks(20);
+        
+        setPlaylistTracks(jamendoTracksToTracks(tracks));
+      } catch (error) {
+        console.error('Error loading playlist:', error);
+        toast.error('Algo se desafinó. Intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPlaylist();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="pb-8">
+        <div className="flex items-center gap-6 mb-8">
+          <div className="w-48 h-48 rounded-xl bg-[#131318] animate-pulse" />
+          <div className="flex-1">
+            <div className="h-4 w-24 bg-[#131318] rounded mb-2 animate-pulse" />
+            <div className="h-12 w-96 bg-[#131318] rounded mb-2 animate-pulse" />
+            <div className="h-4 w-64 bg-[#131318] rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!playlist) {
     return (
@@ -21,15 +78,14 @@ export function PlaylistPage() {
     );
   }
 
-  const playlistTracks = playlist.tracks.map(tid => getTrackById(tid)).filter(Boolean);
-  const totalDuration = playlistTracks.reduce((sum, t) => sum + (t?.duration || 0), 0);
-  const isCurrentPlaylist = playlistTracks.some(t => t?.id === currentTrack?.id);
+  const totalDuration = playlistTracks.reduce((sum, t) => sum + t.duration, 0);
+  const isCurrentPlaylist = playlistTracks.some(t => t.id === currentTrack?.id);
 
   const handlePlayAll = () => {
     if (isCurrentPlaylist && isPlaying) {
       togglePlay();
     } else if (playlistTracks.length > 0) {
-      playTrack(playlistTracks[0]!, playlistTracks as NonNullable<ReturnType<typeof getTrackById>>[]);
+      playTrack(playlistTracks[0], playlistTracks);
     }
   };
 
@@ -51,7 +107,7 @@ export function PlaylistPage() {
           <div className="flex items-center gap-2 text-sm text-[#8B8B96] justify-center md:justify-start">
             <span className="font-medium text-[#F5F5F7]">{playlist.owner}</span>
             <span>·</span>
-            <span>{playlist.tracks.length} canciones</span>
+            <span>{playlistTracks.length} canciones</span>
             <span>·</span>
             <span className="font-mono">{formatDuration(totalDuration)}</span>
           </div>
@@ -98,41 +154,39 @@ export function PlaylistPage() {
         </div>
 
         {playlistTracks.map((track, i) => (
-          track && (
-            <motion.div
-              key={track.id}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              onClick={() => playTrack(track, playlistTracks as NonNullable<ReturnType<typeof getTrackById>>[])}
-              className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors group cursor-pointer items-center"
-            >
-              <span className="text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
-              <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block" strokeWidth={1.75} />
-              <div className="flex items-center gap-3 min-w-0">
-                <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
-                <div className="min-w-0">
-                  <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
-                    {track.title}
-                  </p>
-                  <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
-                </div>
+          <motion.div
+            key={track.id}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            onClick={() => playTrack(track, playlistTracks)}
+            className="grid grid-cols-[2rem_1fr_1fr_4rem] md:grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 rounded-lg hover:bg-[#1E1E26] transition-colors group cursor-pointer items-center"
+          >
+            <span className="text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
+            <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block" strokeWidth={1.75} />
+            <div className="flex items-center gap-3 min-w-0">
+              <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
+              <div className="min-w-0">
+                <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
+                  {track.title}
+                </p>
+                <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
               </div>
-              <span className="text-sm text-[#8B8B96] truncate hidden md:block">{track.album}</span>
-              <span className="text-sm text-[#8B8B96] hidden md:block text-right font-mono">{formatTime(track.duration)}</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
-                className="justify-self-end"
-              >
-                <Heart
-                  className={`w-4 h-4 transition-all ${
-                    isLiked(track.id) ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-transparent group-hover:text-[#8B8B96]'
-                  }`}
-                  strokeWidth={1.75}
-                />
-              </button>
-            </motion.div>
-          )
+            </div>
+            <span className="text-sm text-[#8B8B96] truncate hidden md:block">{track.album}</span>
+            <span className="text-sm text-[#8B8B96] hidden md:block text-right font-mono">{formatTime(track.duration)}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
+              className="justify-self-end"
+            >
+              <Heart
+                className={`w-4 h-4 transition-all ${
+                  isLiked(track.id) ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-transparent group-hover:text-[#8B8B96]'
+                }`}
+                strokeWidth={1.75}
+              />
+            </button>
+          </motion.div>
         ))}
       </div>
     </motion.div>
