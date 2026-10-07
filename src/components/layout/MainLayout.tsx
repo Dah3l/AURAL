@@ -42,8 +42,8 @@ export function MainLayout() {
       
       {/* Bottom Bar Container - Fixed en mobile, normal en desktop */}
       <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto z-30">
-        <MobileNav />
         <Player />
+        <MobileNav />
       </div>
     </div>
   );
