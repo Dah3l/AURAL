@@ -277,6 +277,7 @@ export function Player() {
             <button 
               onClick={(e) => { e.stopPropagation(); toggleLike(currentTrack.id); }} 
               className="shrink-0 p-1.5"
+              aria-label={liked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
             >
               <Heart
                 className={`w-4 h-4 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
@@ -290,18 +291,21 @@ export function Player() {
             <button 
               onClick={toggleShuffle}
               className={`hidden md:block transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              aria-label="Aleatorio"
             >
               <Shuffle className="w-4 h-4" strokeWidth={1.75} />
             </button>
             <button 
               onClick={prevTrack} 
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1"
+              aria-label="Anterior"
             >
               <SkipBack className="w-5 h-5 fill-current" strokeWidth={1.75} />
             </button>
             <button
               onClick={togglePlay}
               className="w-10 h-10 md:w-11 md:h-11 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
             >
               {isPlaying ? (
                 <Pause className="w-5 h-5 text-white fill-white" />
@@ -312,12 +316,14 @@ export function Player() {
             <button 
               onClick={nextTrack} 
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1"
+              aria-label="Siguiente"
             >
               <SkipForward className="w-5 h-5 fill-current" strokeWidth={1.75} />
             </button>
             <button 
               onClick={cycleRepeat}
               className={`hidden md:block transition-colors ${repeat !== 'off' ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              aria-label={repeat === 'one' ? 'Repetir una' : repeat === 'all' ? 'Repetir todo' : 'No repetir'}
             >
               {repeat === 'one' ? <Repeat1 className="w-4 h-4" strokeWidth={1.75} /> : <Repeat className="w-4 h-4" strokeWidth={1.75} />}
             </button>
@@ -328,12 +334,14 @@ export function Player() {
             <button 
               onClick={toggleQueue} 
               className={`transition-colors ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              aria-label="Cola de reproducción"
             >
               <ListMusic className="w-4 h-4" strokeWidth={1.75} />
             </button>
             <button 
               onClick={toggleMute} 
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
+              aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
             >
               <VolumeIcon className="w-4 h-4" strokeWidth={1.75} />
             </button>
@@ -345,23 +353,35 @@ export function Player() {
               value={isMuted ? 0 : volume}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
               className="w-24 h-1"
+              aria-label="Volumen"
               style={{ background: `linear-gradient(to right, #7C3AED ${(isMuted ? 0 : volume) * 100}%, #2A2A35 ${(isMuted ? 0 : volume) * 100}%)` }}
             />
             <button 
               onClick={toggleExpanded} 
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
+              aria-label="Pantalla completa"
             >
               <Maximize2 className="w-4 h-4" strokeWidth={1.75} />
             </button>
           </div>
 
-          {/* Botón expandir - Mobile only */}
-          <button 
-            onClick={toggleExpanded} 
-            className="md:hidden text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1.5"
-          >
-            <Maximize2 className="w-5 h-5" strokeWidth={1.75} />
-          </button>
+          {/* Botones mobile - Cola y Expandir */}
+          <div className="md:hidden flex items-center gap-1">
+            <button 
+              onClick={toggleQueue} 
+              className={`transition-colors p-1.5 ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              aria-label="Cola de reproducción"
+            >
+              <ListMusic className="w-5 h-5" strokeWidth={1.75} />
+            </button>
+            <button 
+              onClick={toggleExpanded} 
+              className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1.5"
+              aria-label="Pantalla completa"
+            >
+              <Maximize2 className="w-5 h-5" strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
 
         {/* Barra de progreso - Siempre visible debajo */}
@@ -380,7 +400,7 @@ export function Player() {
               style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
             />
             <span className="text-[10px] text-[#8B8B96] w-9 md:w-10 font-mono shrink-0">
-              {formatTime(duration)}
+              {duration > 0 ? formatTime(duration) : '—'}
             </span>
           </div>
         </div>

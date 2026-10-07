@@ -76,12 +76,12 @@ export const albums: Album[] = [
 ];
 
 export const playlists: Playlist[] = [
-  { id: 'p1', title: 'Chill Vibes', description: 'Perfect for relaxing and unwinding', cover: COVERS[0], owner: 'Soundwave', tracks: ['t5', 't6', 't9', 't17', 't18'], duration: 1613, isPublic: true, createdAt: '2024-01-15' },
-  { id: 'p2', title: 'Late Night Drive', description: 'Synthwave and electronic for night drives', cover: COVERS[1], owner: 'Soundwave', tracks: ['t1', 't2', 't3', 't4', 't15'], duration: 1209, isPublic: true, createdAt: '2024-02-20' },
-  { id: 'p3', title: 'Indie Discoveries', description: 'Fresh indie tracks you need to hear', cover: COVERS[3], owner: 'Soundwave', tracks: ['t7', 't8', 't13', 't14', 't19', 't20'], duration: 1859, isPublic: true, createdAt: '2024-03-10' },
-  { id: 'p4', title: 'Focus Flow', description: 'Ambient and lo-fi for deep work', cover: COVERS[4], owner: 'Soundwave', tracks: ['t9', 't10', 't17', 't18', 't19'], duration: 1790, isPublic: true, createdAt: '2024-01-28' },
-  { id: 'p5', title: 'Weekend Energy', description: 'High-energy tracks for the weekend', cover: COVERS[7], owner: 'Soundwave', tracks: ['t11', 't12', 't15', 't16', 't1'], duration: 1075, isPublic: true, createdAt: '2024-04-05' },
-  { id: 'p6', title: 'Acoustic Mornings', description: 'Start your day with gentle sounds', cover: COVERS[8], owner: 'Soundwave', tracks: ['t5', 't6', 't7', 't8', 't17'], duration: 1557, isPublic: true, createdAt: '2024-02-14' },
+  { id: 'p1', title: 'Vibras Tranquilas', description: 'Perfecto para relajarte y desconectar', cover: COVERS[0], owner: 'Aural', tracks: ['t5', 't6', 't9', 't17', 't18'], duration: 1613, isPublic: true, createdAt: '2024-01-15' },
+  { id: 'p2', title: 'Manejo Nocturno', description: 'Synthwave y electrónica para viajes nocturnos', cover: COVERS[1], owner: 'Aural', tracks: ['t1', 't2', 't3', 't4', 't15'], duration: 1209, isPublic: true, createdAt: '2024-02-20' },
+  { id: 'p3', title: 'Descubrimientos Indie', description: 'Tracks indie frescos que necesitas escuchar', cover: COVERS[3], owner: 'Aural', tracks: ['t7', 't8', 't13', 't14', 't19', 't20'], duration: 1859, isPublic: true, createdAt: '2024-03-10' },
+  { id: 'p4', title: 'Flujo de Concentración', description: 'Ambient y lo-fi para trabajo profundo', cover: COVERS[4], owner: 'Aural', tracks: ['t9', 't10', 't17', 't18', 't19'], duration: 1790, isPublic: true, createdAt: '2024-01-28' },
+  { id: 'p5', title: 'Energía de Fin de Semana', description: 'Tracks de alta energía para el fin de semana', cover: COVERS[7], owner: 'Aural', tracks: ['t11', 't12', 't15', 't16', 't1'], duration: 1075, isPublic: true, createdAt: '2024-04-05' },
+  { id: 'p6', title: 'Mañanas Acústicas', description: 'Comienza tu día con sonidos suaves', cover: COVERS[8], owner: 'Aural', tracks: ['t5', 't6', 't7', 't8', 't17'], duration: 1557, isPublic: true, createdAt: '2024-02-14' },
 ];
 
 export const genres: Genre[] = [

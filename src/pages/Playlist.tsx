@@ -160,11 +160,48 @@ export function PlaylistPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.03 }}
             onClick={() => playTrack(track, playlistTracks)}
-            className="flex items-center gap-2.5 md:gap-4 px-2 md:px-4 py-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group cursor-pointer"
+            className="hidden sm:grid grid-cols-[2rem_2fr_1fr_1fr_4rem] gap-4 px-4 py-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group cursor-pointer items-center"
           >
-            <span className="w-5 md:w-8 text-center text-xs md:text-sm text-[#8B8B96] group-hover:hidden font-mono shrink-0">{i + 1}</span>
+            <span className="text-sm text-[#8B8B96] group-hover:hidden font-mono">{i + 1}</span>
+            <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block" strokeWidth={1.75} />
+            <div className="flex items-center gap-3 min-w-0">
+              <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
+              <div className="min-w-0">
+                <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
+                  {track.title}
+                </p>
+                <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+              </div>
+            </div>
+            <span className="text-sm text-[#8B8B96] truncate">{track.album}</span>
+            <span className="text-sm text-[#8B8B96] text-right font-mono">{formatTime(track.duration)}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
+              className="justify-self-end"
+            >
+              <Heart
+                className={`w-4 h-4 transition-all ${
+                  isLiked(track.id) ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-transparent group-hover:text-[#8B8B96]'
+                }`}
+                strokeWidth={1.75}
+              />
+            </button>
+          </motion.div>
+        ))}
+
+        {/* Mobile layout */}
+        {playlistTracks.map((track, i) => (
+          <motion.div
+            key={`mobile-${track.id}`}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            onClick={() => playTrack(track, playlistTracks)}
+            className="sm:hidden flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group cursor-pointer"
+          >
+            <span className="w-5 text-center text-xs text-[#8B8B96] group-hover:hidden font-mono shrink-0">{i + 1}</span>
             <Play className="w-4 h-4 text-[#F5F5F7] hidden group-hover:block shrink-0" strokeWidth={1.75} />
-            <img src={track.cover} alt={track.title} className="w-10 h-10 md:w-11 md:h-11 rounded object-cover shrink-0" />
+            <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
                 {track.title}
@@ -182,7 +219,7 @@ export function PlaylistPage() {
                 strokeWidth={1.75}
               />
             </button>
-            <span className="text-xs md:text-sm text-[#8B8B96] font-mono shrink-0">{formatTime(track.duration)}</span>
+            <span className="text-xs text-[#8B8B96] font-mono shrink-0">{formatTime(track.duration)}</span>
           </motion.div>
         ))}
       </div>
