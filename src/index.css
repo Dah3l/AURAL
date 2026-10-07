@@ -230,3 +230,13 @@ html {
     display: none;
   }
 }
+
+/* Clase utilitaria para ocultar scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

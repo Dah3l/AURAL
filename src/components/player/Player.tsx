@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1,
-  Heart, Volume2, VolumeX, Volume1, Maximize2, Minimize2, ListMusic, X
+  Heart, Volume2, VolumeX, Volume1, Maximize2, Minimize2, ListMusic, X, PlusCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlayerStore } from '../../store/playerStore';
 import { useLibraryStore } from '../../store/libraryStore';
 import { formatTime } from '../../lib/utils';
@@ -154,7 +155,32 @@ export function Player() {
                 className="w-56 h-56 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-2xl object-cover shadow-2xl mb-6 md:mb-8 ring-1 ring-[#2A2A35]"
               />
               <h2 className="text-xl sm:text-2xl font-bold mb-1 text-[#F5F5F7] text-center px-4">{currentTrack.title}</h2>
-              <p className="text-[#8B8B96] text-base sm:text-lg text-center">{currentTrack.artist}</p>
+              <p className="text-[#8B8B96] text-base sm:text-lg text-center mb-4">{currentTrack.artist}</p>
+              
+              {/* Botones de acción */}
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => toggleLike(currentTrack.id)}
+                  className="p-3 rounded-full hover:bg-[#1E1E26] transition-colors"
+                  aria-label={liked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                >
+                  <Heart
+                    className={`w-6 h-6 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+                    strokeWidth={1.75}
+                  />
+                </button>
+                <button
+                  onClick={() => {
+                    if (currentTrack) {
+                      toast.success('Añadido a la cola');
+                    }
+                  }}
+                  className="p-3 rounded-full hover:bg-[#1E1E26] transition-colors"
+                  aria-label="Añadir a playlist"
+                >
+                  <PlusCircle className="w-6 h-6 text-[#8B8B96] hover:text-[#F5F5F7]" strokeWidth={1.75} />
+                </button>
+              </div>
             </div>
 
             <div className="px-8 pb-8">
@@ -250,14 +276,13 @@ export function Player() {
         )}
       </AnimatePresence>
 
-      {/* Barra del reproductor - Web Layout Unificado */}
-      <div className="bg-[#08080C]/98 backdrop-blur-xl border-t border-[#2A2A35] h-[72px] md:h-[90px] flex flex-col">
-        {/* Fila principal: Info | Controles | Extras */}
-        <div className="flex-1 px-3 md:px-4 flex items-center gap-2 md:gap-4">
-          
-          {/* Columna 1: Cover + Info (izquierda) - Solo en desktop */}
+      {/* Barra del reproductor - Web Layout */}
+      <div className="bg-[#08080C]/98 backdrop-blur-xl border-t border-[#2A2A35]">
+        {/* Layout Desktop - 3 columnas */}
+        <div className="hidden md:flex items-center gap-4 px-4 h-[90px]">
+          {/* Columna 1: Cover + Info */}
           <div 
-            className="hidden md:flex items-center gap-3 flex-1 min-w-0 cursor-pointer group"
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group"
             onClick={toggleExpanded}
           >
             <motion.img
@@ -286,33 +311,11 @@ export function Player() {
             </button>
           </div>
 
-          {/* Cover + Info móvil - Compacto */}
-          <div 
-            className="md:hidden flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
-            onClick={toggleExpanded}
-          >
-            <motion.img
-              key={currentTrack.id}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              src={currentTrack.cover}
-              alt={currentTrack.title}
-              className="w-10 h-10 rounded object-cover ring-1 ring-[#2A2A35] shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate text-[#F5F5F7]">
-                {currentTrack.title}
-              </p>
-              <p className="text-[10px] text-[#8B8B96] truncate">{currentTrack.artist}</p>
-            </div>
-          </div>
-
-          {/* Columna 2: Controles de reproducción (centro) */}
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Shuffle - Solo desktop */}
+          {/* Columna 2: Controles */}
+          <div className="flex items-center gap-3">
             <button 
               onClick={toggleShuffle}
-              className={`hidden md:block transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              className={`transition-colors ${shuffle ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
               aria-label="Aleatorio"
             >
               <Shuffle className="w-4 h-4" strokeWidth={1.75} />
@@ -322,17 +325,17 @@ export function Player() {
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1"
               aria-label="Anterior"
             >
-              <SkipBack className="w-4 h-4 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
+              <SkipBack className="w-5 h-5 fill-current" strokeWidth={1.75} />
             </button>
             <button
               onClick={togglePlay}
-              className="w-9 h-9 md:w-11 md:h-11 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              className="w-11 h-11 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
               aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
             >
               {isPlaying ? (
-                <Pause className="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
+                <Pause className="w-5 h-5 text-white fill-white" />
               ) : (
-                <Play className="w-4 h-4 md:w-5 md:h-5 text-white fill-white ml-0.5" />
+                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
               )}
             </button>
             <button 
@@ -340,20 +343,19 @@ export function Player() {
               className="text-[#8B8B96] hover:text-[#F5F5F7] transition-colors p-1"
               aria-label="Siguiente"
             >
-              <SkipForward className="w-4 h-4 md:w-5 md:h-5 fill-current" strokeWidth={1.75} />
+              <SkipForward className="w-5 h-5 fill-current" strokeWidth={1.75} />
             </button>
-            {/* Repeat - Solo desktop */}
             <button 
               onClick={cycleRepeat}
-              className={`hidden md:block transition-colors ${repeat !== 'off' ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
+              className={`transition-colors ${repeat !== 'off' ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
               aria-label={repeat === 'one' ? 'Repetir una' : repeat === 'all' ? 'Repetir todo' : 'No repetir'}
             >
               {repeat === 'one' ? <Repeat1 className="w-4 h-4" strokeWidth={1.75} /> : <Repeat className="w-4 h-4" strokeWidth={1.75} />}
             </button>
           </div>
 
-          {/* Columna 3: Controles adicionales - Solo desktop */}
-          <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
+          {/* Columna 3: Extras */}
+          <div className="flex items-center gap-3 flex-1 justify-end">
             <button 
               onClick={toggleQueue} 
               className={`transition-colors ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96] hover:text-[#F5F5F7]'}`}
@@ -387,33 +389,103 @@ export function Player() {
               <Maximize2 className="w-4 h-4" strokeWidth={1.75} />
             </button>
           </div>
+        </div>
 
-          {/* Botones mobile - Like, Cola y Expandir */}
-          <div className="md:hidden flex items-center gap-1">
+        {/* Layout Móvil - Simétrico */}
+        <div className="md:hidden flex flex-col">
+          {/* Fila 1: Cover + Info */}
+          <div 
+            className="flex items-center gap-2 px-3 pt-2 cursor-pointer"
+            onClick={toggleExpanded}
+          >
+            <motion.img
+              key={currentTrack.id}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={currentTrack.cover}
+              alt={currentTrack.title}
+              className="w-9 h-9 rounded object-cover ring-1 ring-[#2A2A35] shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium truncate text-[#F5F5F7]">
+                {currentTrack.title}
+              </p>
+              <p className="text-[10px] text-[#8B8B96] truncate">{currentTrack.artist}</p>
+            </div>
+          </div>
+
+          {/* Fila 2: Controles simétricos */}
+          <div className="flex items-center justify-between px-6 py-2">
             <button 
-              onClick={(e) => { e.stopPropagation(); toggleLike(currentTrack.id); }} 
-              className="p-1.5"
+              onClick={() => toggleLike(currentTrack.id)}
+              className="w-9 h-9 flex items-center justify-center"
               aria-label={liked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
             >
               <Heart
-                className={`w-4 h-4 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96]'}`}
+                className={`w-5 h-5 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96]'}`}
                 strokeWidth={1.75}
               />
             </button>
             <button 
-              onClick={toggleQueue} 
-              className={`transition-colors p-1.5 ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96]'}`}
+              onClick={prevTrack} 
+              className="w-9 h-9 flex items-center justify-center text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
+              aria-label="Anterior"
+            >
+              <SkipBack className="w-5 h-5 fill-current" strokeWidth={1.75} />
+            </button>
+            <button
+              onClick={togglePlay}
+              className="w-11 h-11 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
+            >
+              {isPlaying ? (
+                <Pause className="w-5 h-5 text-white fill-white" />
+              ) : (
+                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+              )}
+            </button>
+            <button 
+              onClick={nextTrack} 
+              className="w-9 h-9 flex items-center justify-center text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
+              aria-label="Siguiente"
+            >
+              <SkipForward className="w-5 h-5 fill-current" strokeWidth={1.75} />
+            </button>
+            <button 
+              onClick={toggleQueue}
+              className="w-9 h-9 flex items-center justify-center"
               aria-label="Cola de reproducción"
             >
-              <ListMusic className="w-4 h-4" strokeWidth={1.75} />
+              <ListMusic className={`w-5 h-5 transition-colors ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96]'}`} strokeWidth={1.75} />
             </button>
+          </div>
+
+          {/* Barra de progreso móvil */}
+          <div className="px-3 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-[#8B8B96] w-9 text-right font-mono shrink-0">
+                {formatTime(progress)}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 1}
+                value={progress}
+                onChange={handleProgressChange}
+                className="flex-1 h-1"
+                style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
+              />
+              <span className="text-[10px] text-[#8B8B96] w-9 font-mono shrink-0">
+                {duration > 0 ? formatTime(duration) : '—'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Barra de progreso - Siempre visible debajo */}
-        <div className="px-3 md:px-4 pb-2 md:pb-3">
+        {/* Barra de progreso desktop */}
+        <div className="hidden md:block px-4 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#8B8B96] w-9 md:w-10 text-right font-mono shrink-0">
+            <span className="text-[10px] text-[#8B8B96] w-10 text-right font-mono shrink-0">
               {formatTime(progress)}
             </span>
             <input
@@ -425,7 +497,7 @@ export function Player() {
               className="flex-1 h-1 hover:h-1.5 transition-all"
               style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
             />
-            <span className="text-[10px] text-[#8B8B96] w-9 md:w-10 font-mono shrink-0">
+            <span className="text-[10px] text-[#8B8B96] w-10 font-mono shrink-0">
               {duration > 0 ? formatTime(duration) : '—'}
             </span>
           </div>
