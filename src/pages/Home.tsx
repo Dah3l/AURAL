@@ -77,11 +77,11 @@ export function Home() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="pb-8">
       {/* Saludo */}
-      <motion.div variants={item} className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-2">
+      <motion.div variants={item} className="mb-6 md:mb-8">
+        <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-1.5 md:mb-2">
           {getGreeting()}
         </p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#F5F5F7]">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F5F5F7]">
           Solo música. <span className="gradient-text">Solo tú.</span>
         </h1>
       </motion.div>
@@ -111,11 +111,11 @@ export function Home() {
 
       {/* Destacados de la semana */}
       {featuredTracks.length > 0 && (
-        <motion.section variants={item} className="mb-10">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Destacados de la semana</h2>
+        <motion.section variants={item} className="mb-8 md:mb-10">
+          <div className="flex items-baseline justify-between mb-3 md:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Destacados de la semana</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {featuredTracks.map(track => (
               <motion.div
                 key={track.id}
@@ -139,11 +139,11 @@ export function Home() {
 
       {/* Nuevos lanzamientos */}
       {newReleases.length > 0 && (
-        <motion.section variants={item} className="mb-10">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Nuevos lanzamientos</h2>
+        <motion.section variants={item} className="mb-8 md:mb-10">
+          <div className="flex items-baseline justify-between mb-3 md:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Nuevos lanzamientos</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {newReleases.map(track => (
               <motion.div
                 key={track.id}
@@ -167,11 +167,11 @@ export function Home() {
 
       {/* Lo más popular */}
       {popularTracks.length > 0 && (
-        <motion.section variants={item} className="mb-10">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
+        <motion.section variants={item} className="mb-8 md:mb-10">
+          <div className="flex items-baseline justify-between mb-3 md:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {popularTracks.slice(0, 6).map(track => (
               <motion.div
                 key={track.id}
@@ -195,11 +195,11 @@ export function Home() {
 
       {/* Artistas populares */}
       {popularArtists.length > 0 && (
-        <motion.section variants={item} className="mb-10">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
+        <motion.section variants={item} className="mb-8 md:mb-10">
+          <div className="flex items-baseline justify-between mb-3 md:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {popularArtists.map(artist => (
               <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
                 <motion.div whileHover={{ y: -4 }} className="relative mb-3">

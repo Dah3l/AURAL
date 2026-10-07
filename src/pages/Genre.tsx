@@ -71,9 +71,9 @@ export function GenrePage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
-      <div className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-2">Género</p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#F5F5F7]">{genreName}</h1>
+      <div className="mb-6 md:mb-8">
+        <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-1.5 md:mb-2">Género</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F5F5F7]">{genreName}</h1>
       </div>
 
       {tracks.length === 0 ? (
@@ -81,7 +81,7 @@ export function GenrePage() {
           <p className="text-[#8B8B96]">No hay canciones en este género.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
           {tracks.map(track => (
             <motion.div
               key={track.id}
