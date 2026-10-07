@@ -1,16 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search as SearchIcon, Play } from 'lucide-react';
 import { usePlayerStore } from '../store/playerStore';
-import { useSearchTracks } from '../lib/useAuralData';
+import { searchTracks, getPopularArtists } from '../lib/jamendo';
+import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
+import { useDebounce } from '../hooks/useDebounce';
+import { formatNumber } from '../lib/utils';
 import { AuralLogo } from '../components/shared/AuralLogo';
+import { Track, Artist } from '../types';
+import { Link } from 'react-router-dom';
 
 export function SearchPage() {
   const [query, setQuery] = useState('');
   const { playTrack } = usePlayerStore();
-  const { data: tracks, loading } = useSearchTracks(query, 20);
+  const debouncedQuery = useDebounce(query, 300);
 
-  const hasSearched = query.trim().length > 0;
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    async function search() {
+      if (!debouncedQuery.trim()) {
+        setTracks([]);
+        setArtists([]);
+        setHasSearched(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setHasSearched(true);
+        
+        const [trackResults, artistResults] = await Promise.all([
+          searchTracks(debouncedQuery, 20),
+          getPopularArtists(10)
+        ]);
+        
+        setTracks(jamendoTracksToTracks(trackResults));
+        setArtists(jamendoArtistsToArtists(artistResults));
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    search();
+  }, [debouncedQuery]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
@@ -29,23 +67,25 @@ export function SearchPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-2">
-              <div className="w-10 h-10 bg-[#131318] rounded animate-pulse" />
-              <div className="flex-1">
-                <div className="h-4 w-48 bg-[#131318] rounded animate-pulse mb-1" />
-                <div className="h-3 w-32 bg-[#131318] rounded animate-pulse" />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-2">
+                <div className="w-10 h-10 bg-[#131318] rounded animate-pulse" />
+                <div className="flex-1">
+                  <div className="h-4 w-48 bg-[#131318] rounded animate-pulse mb-1" />
+                  <div className="h-3 w-32 bg-[#131318] rounded animate-pulse" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Results */}
       {!loading && hasSearched && (
         <div className="space-y-6">
-          {tracks.length === 0 && (
+          {tracks.length === 0 && artists.length === 0 && (
             <div className="text-center py-16">
               <div className="flex justify-center mb-4 opacity-30">
                 <AuralLogo size={48} />
@@ -59,7 +99,7 @@ export function SearchPage() {
             <section>
               <h2 className="text-lg font-semibold mb-3 text-[#F5F5F7]">Canciones</h2>
               <div className="space-y-1">
-                {tracks.map((track, i) => (
+                {tracks.slice(0, 10).map((track, i) => (
                   <motion.button
                     key={track.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -80,6 +120,27 @@ export function SearchPage() {
                     </div>
                     <span className="text-xs text-[#8B8B96] font-mono">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
                   </motion.button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {artists.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold mb-3 text-[#F5F5F7]">Artistas</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {artists.slice(0, 6).map(artist => (
+                  <motion.div
+                    key={artist.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Link to={`/artist/${artist.id}`} className="group cursor-pointer block">
+                      <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-2 ring-1 ring-[#2A2A35]" />
+                      <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
+                      <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
             </section>

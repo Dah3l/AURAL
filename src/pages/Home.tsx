@@ -1,10 +1,13 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { usePopularTracks, usePopularArtists } from '../lib/useAuralData';
+import { getPopularTracks, getPopularArtists, getFeaturedTracks, getNewReleases } from '../lib/jamendo';
+import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
 import { getGreeting } from '../lib/utils';
 import { Link } from 'react-router-dom';
+import { Track, Artist } from '../types';
 
 const container = {
   hidden: { opacity: 0 },
@@ -19,18 +22,41 @@ export function Home() {
   const { playTrack } = usePlayerStore();
   const recentlyPlayed = useLibraryStore(s => s.recentlyPlayed);
   
-  const { data: popularTracks, loading: tracksLoading } = usePopularTracks(12);
-  const { data: popularArtists, loading: artistsLoading } = usePopularArtists(6);
+  const [popularTracks, setPopularTracks] = useState<Track[]>([]);
+  const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
+  const [newReleases, setNewReleases] = useState<Track[]>([]);
+  const [popularArtists, setPopularArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const loading = tracksLoading || artistsLoading;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [popular, featured, newRel, artists] = await Promise.all([
+          getPopularTracks(12),
+          getFeaturedTracks(6),
+          getNewReleases(6),
+          getPopularArtists(6)
+        ]);
+        
+        setPopularTracks(jamendoTracksToTracks(popular));
+        setFeaturedTracks(jamendoTracksToTracks(featured));
+        setNewReleases(jamendoTracksToTracks(newRel));
+        setPopularArtists(jamendoArtistsToArtists(artists));
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, []);
 
   const recentTracks = recentlyPlayed
     .map(id => popularTracks.find(t => t.id === id))
     .filter(Boolean)
     .slice(0, 6);
-
-  const dailyMix = popularTracks.slice(0, 6);
-  const discoveries = popularTracks.slice(6, 12);
 
   if (loading) {
     return (
@@ -83,78 +109,112 @@ export function Home() {
         </motion.div>
       )}
 
-      {/* Lo más popular */}
-      <motion.section variants={item} className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {dailyMix.map(track => (
-            <motion.div
-              key={track.id}
-              whileHover={{ y: -4 }}
-              className="group cursor-pointer"
-              onClick={() => playTrack(track, dailyMix)}
-            >
-              <div className="relative mb-3">
-                <img src={track.cover} alt={track.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+      {/* Destacados de la semana */}
+      {featuredTracks.length > 0 && (
+        <motion.section variants={item} className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Destacados de la semana</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {featuredTracks.map(track => (
+              <motion.div
+                key={track.id}
+                whileHover={{ y: -4 }}
+                className="group cursor-pointer"
+                onClick={() => playTrack(track, featuredTracks)}
+              >
+                <div className="relative mb-3">
+                  <img src={track.cover} alt={track.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
-              <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.section>
+                <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
+                <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
-      {/* Descubrimientos */}
-      <motion.section variants={item} className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Descubrimientos</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {discoveries.map(track => (
-            <motion.div
-              key={track.id}
-              whileHover={{ y: -4 }}
-              className="group cursor-pointer"
-              onClick={() => playTrack(track, discoveries)}
-            >
-              <div className="relative mb-3">
-                <img src={track.cover} alt={track.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+      {/* Nuevos lanzamientos */}
+      {newReleases.length > 0 && (
+        <motion.section variants={item} className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Nuevos lanzamientos</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {newReleases.map(track => (
+              <motion.div
+                key={track.id}
+                whileHover={{ y: -4 }}
+                className="group cursor-pointer"
+                onClick={() => playTrack(track, newReleases)}
+              >
+                <div className="relative mb-3">
+                  <img src={track.cover} alt={track.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
-              <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.section>
+                <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
+                <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Lo más popular */}
+      {popularTracks.length > 0 && (
+        <motion.section variants={item} className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {popularTracks.slice(0, 6).map(track => (
+              <motion.div
+                key={track.id}
+                whileHover={{ y: -4 }}
+                className="group cursor-pointer"
+                onClick={() => playTrack(track, popularTracks)}
+              >
+                <div className="relative mb-3">
+                  <img src={track.cover} alt={track.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+                  </div>
+                </div>
+                <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
+                <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Artistas populares */}
-      <motion.section variants={item} className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {popularArtists.map(artist => (
-            <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
-              <motion.div whileHover={{ y: -4 }} className="relative mb-3">
-                <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
-                </div>
-              </motion.div>
-              <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
-              <p className="text-xs text-[#8B8B96] text-center">Artista</p>
-            </Link>
-          ))}
-        </div>
-      </motion.section>
+      {popularArtists.length > 0 && (
+        <motion.section variants={item} className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-semibold tracking-tight text-[#F5F5F7]">Artistas populares</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {popularArtists.map(artist => (
+              <Link key={artist.id} to={`/artist/${artist.id}`} className="group">
+                <motion.div whileHover={{ y: -4 }} className="relative mb-3">
+                  <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                  <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
+                  </div>
+                </motion.div>
+                <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
+                <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+              </Link>
+            ))}
+          </div>
+        </motion.section>
+      )}
     </motion.div>
   );
 }

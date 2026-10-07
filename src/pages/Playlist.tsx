@@ -1,22 +1,59 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { usePlaylistData } from '../lib/useAuralData';
-import { playlists as mockPlaylists } from '../lib/mockData';
+import { getTracksByTag, getPopularTracks } from '../lib/jamendo';
+import { jamendoTracksToTracks } from '../lib/adapters';
 import { formatDuration, formatTime } from '../lib/utils';
+import { Track } from '../types';
+import { playlists as mockPlaylists } from '../lib/mockData';
+
+// Mapeo de playlists a tags de Jamendo
+const playlistTagMap: Record<string, string> = {
+  'p1': 'chill',
+  'p2': 'electronic',
+  'p3': 'indie',
+  'p4': 'ambient',
+  'p5': 'rock',
+  'p6': 'acoustic',
+};
 
 export function PlaylistPage() {
   const { id } = useParams<{ id: string }>();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { toggleLike, isLiked } = useLibraryStore();
 
-  const { data: playlistTracks, loading } = usePlaylistData(id || '');
+  const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Buscar playlist en datos mock
   const playlist = id ? mockPlaylists.find(p => p.id === id) : null;
+
+  useEffect(() => {
+    async function loadPlaylist() {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Obtener tag de la playlist o usar tracks populares por defecto
+        const tag = playlistTagMap[id];
+        const tracks = tag 
+          ? await getTracksByTag(tag, 20)
+          : await getPopularTracks(20);
+        
+        setPlaylistTracks(jamendoTracksToTracks(tracks));
+      } catch (error) {
+        console.error('Error loading playlist:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPlaylist();
+  }, [id]);
 
   if (loading) {
     return (
