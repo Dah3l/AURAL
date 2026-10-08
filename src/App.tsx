@@ -32,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { initialize, user } = useAuthStore();
-  const { fetchPlaylists, fetchLikes, fetchHistory } = useLibraryStore();
+  const { fetchPlaylists, fetchLikes, fetchHistory, fetchFollowedArtists } = useLibraryStore();
 
   useEffect(() => {
     initialize();
@@ -43,8 +43,9 @@ function App() {
       fetchPlaylists();
       fetchLikes();
       fetchHistory();
+      fetchFollowedArtists();
     }
-  }, [user, fetchPlaylists, fetchLikes, fetchHistory]);
+  }, [user, fetchPlaylists, fetchLikes, fetchHistory, fetchFollowedArtists]);
 
   return (
     <BrowserRouter>

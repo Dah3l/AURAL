@@ -55,7 +55,7 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks, createPlaylist, updatePlaylist, deletePlaylist, recentlyPlayed, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist, updatePlaylist, deletePlaylist, recentlyPlayed, followedArtists, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
   const navigate = useNavigate();
 
   // Detectar si debemos abrir el modal de crear playlist
@@ -96,19 +96,32 @@ export function LibraryPage() {
     loadLikedTracks();
   }, [likedTracks]);
 
-  // Cargar artistas y álbumes del historial
+  // Cargar artistas seguidos
   useEffect(() => {
-    async function loadHistoryData() {
+    // Convertir FollowedArtist[] a Artist[]
+    const followed: Artist[] = followedArtists.map(fa => ({
+      id: fa.artist_id,
+      name: fa.artist_name,
+      image: fa.artist_image,
+      genre: 'Various',
+      monthlyListeners: 0,
+      verified: false,
+      albums: [],
+    }));
+    setArtistsList(followed);
+  }, [followedArtists]);
+
+  // Cargar álbumes del historial
+  useEffect(() => {
+    async function loadAlbumsFromHistory() {
       setLoading(true);
       
       if (recentlyPlayed.length === 0) {
-        setArtistsList([]);
         setAlbumsList([]);
         setLoading(false);
         return;
       }
 
-      const artistsMap = new Map<string, Artist>();
       const albumsMap = new Map<string, Album>();
 
       for (const trackId of recentlyPlayed.slice(0, 30)) {
@@ -116,19 +129,6 @@ export function LibraryPage() {
           const jamendoTrack = await getJamendoTrack(trackId.replace('jamendo-', ''));
           if (jamendoTrack) {
             const track = jamendoTrackToTrack(jamendoTrack);
-            
-            // Agregar artista si no existe
-            if (!artistsMap.has(track.artistId)) {
-              artistsMap.set(track.artistId, {
-                id: track.artistId,
-                name: track.artist,
-                image: track.cover,
-                genre: 'Various',
-                monthlyListeners: 0,
-                verified: false,
-                albums: [],
-              });
-            }
             
             // Agregar álbum si no existe
             if (!albumsMap.has(track.albumId)) {
@@ -149,12 +149,11 @@ export function LibraryPage() {
         }
       }
 
-      setArtistsList(Array.from(artistsMap.values()));
       setAlbumsList(Array.from(albumsMap.values()));
       setLoading(false);
     }
 
-    loadHistoryData();
+    loadAlbumsFromHistory();
   }, [recentlyPlayed]);
 
   const handleCreatePlaylist = async () => {
@@ -472,16 +471,17 @@ export function LibraryPage() {
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'
             : 'space-y-1'
         )}>
-          {loading ? (
-            <div className="col-span-full text-center py-16">
-              <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-[#8B8B96]">Cargando...</p>
-            </div>
-          ) : artistsList.length === 0 ? (
+          {artistsList.length === 0 ? (
             <div className="col-span-full text-center py-16">
               <Users className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
-              <p className="text-[#8B8B96]">Aún no tienes artistas</p>
-              <p className="text-sm text-[#8B8B96]/60 mt-1">Empieza a escuchar música</p>
+              <p className="text-[#8B8B96]">No sigues a ningún artista</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Busca artistas y dales a "Seguir" para verlos aquí</p>
+              <Link
+                to="/search"
+                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 text-[#A78BFA] text-sm font-medium hover:bg-[#7C3AED]/25 transition-all"
+              >
+                Explorar artistas
+              </Link>
             </div>
           ) : (
             artistsList.map(artist => (
@@ -489,14 +489,14 @@ export function LibraryPage() {
                 <Link key={artist.id} to={`/artist/${artist.id}`} className="group cursor-pointer">
                   <img src={artist.image} alt={artist.name} className="w-full aspect-square rounded-full object-cover shadow-lg mb-2 ring-1 ring-[#2A2A35]" />
                   <p className="text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
-                  <p className="text-xs text-[#8B8B96] text-center">Artista</p>
+                  <p className="text-xs text-[#8B8B96] text-center">Siguiendo</p>
                 </Link>
               ) : (
                 <Link key={artist.id} to={`/artist/${artist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
                   <img src={artist.image} alt={artist.name} className="w-12 h-12 rounded-full object-cover" />
                   <div>
                     <p className="text-sm font-medium text-[#F5F5F7]">{artist.name}</p>
-                    <p className="text-xs text-[#8B8B96]">Artista</p>
+                    <p className="text-xs text-[#8B8B96]">Siguiendo</p>
                   </div>
                 </Link>
               )

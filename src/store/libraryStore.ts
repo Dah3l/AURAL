@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
-import type { Playlist, UserLike, ListeningHistory } from '../types/database';
+import type { Playlist, UserLike, ListeningHistory, FollowedArtist } from '../types/database';
 
 interface LibraryState {
   // State
   playlists: Playlist[];
   likedTracks: string[];
   recentlyPlayed: string[];
+  followedArtists: FollowedArtist[];
   loading: boolean;
   pendingTrackToAdd: string | null; // Track ID waiting to be added to a newly created playlist
   
@@ -29,12 +30,34 @@ interface LibraryState {
   // History actions
   fetchHistory: () => Promise<void>;
   addToHistory: (trackId: string) => Promise<void>;
+  
+  // Followed artists actions
+  fetchFollowedArtists: () => void;
+  toggleFollowArtist: (artistId: string, artistName: string, artistImage: string) => void;
+  isFollowed: (artistId: string) => boolean;
+}
+
+// Helper para localStorage de artistas seguidos
+const FOLLOWED_ARTISTS_KEY = 'aural_followed_artists';
+
+function getStoredFollowedArtists(): FollowedArtist[] {
+  try {
+    const stored = localStorage.getItem(FOLLOWED_ARTISTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFollowedArtists(artists: FollowedArtist[]) {
+  localStorage.setItem(FOLLOWED_ARTISTS_KEY, JSON.stringify(artists));
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   playlists: [],
   likedTracks: [],
   recentlyPlayed: [],
+  followedArtists: [],
   loading: false,
   pendingTrackToAdd: null,
 
@@ -347,5 +370,46 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   setPendingTrackToAdd: (trackId) => {
     set({ pendingTrackToAdd: trackId });
+  },
+
+  // ===== FOLLOWED ARTISTS =====
+  
+  fetchFollowedArtists: () => {
+    const artists = getStoredFollowedArtists();
+    set({ followedArtists: artists });
+  },
+
+  toggleFollowArtist: (artistId, artistName, artistImage) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const { followedArtists } = get();
+    const isCurrentlyFollowed = followedArtists.some(a => a.artist_id === artistId);
+
+    let newFollowedArtists: FollowedArtist[];
+
+    if (isCurrentlyFollowed) {
+      // Dejar de seguir
+      newFollowedArtists = followedArtists.filter(a => a.artist_id !== artistId);
+    } else {
+      // Seguir
+      const newFollow: FollowedArtist = {
+        id: `follow-${Date.now()}`,
+        user_id: user.id,
+        artist_id: artistId,
+        artist_name: artistName,
+        artist_image: artistImage,
+        followed_at: new Date().toISOString(),
+      };
+      newFollowedArtists = [newFollow, ...followedArtists];
+    }
+
+    // Actualizar estado y persistir
+    set({ followedArtists: newFollowedArtists });
+    saveFollowedArtists(newFollowedArtists);
+  },
+
+  isFollowed: (artistId) => {
+    return get().followedArtists.some(a => a.artist_id === artistId);
   },
 }));
