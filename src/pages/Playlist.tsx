@@ -275,7 +275,7 @@ export function PlaylistPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -5 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-56 bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
+                className="absolute left-0 md:right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
               >
                 <button
                   onClick={() => {
