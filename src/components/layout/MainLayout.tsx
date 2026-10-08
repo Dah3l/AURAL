@@ -44,15 +44,15 @@ export function MainLayout() {
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden relative">
           <TopBar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
           <div
             id="main-content"
-            className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 transition-all duration-300"
+            className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 transition-all duration-300 relative z-0"
             style={{
               paddingBottom: currentTrack 
-                ? 'calc(env(safe-area-inset-bottom, 0px) + 136px)'
-                : 'calc(env(safe-area-inset-bottom, 0px) + 64px)'
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 160px)'
+                : 'calc(env(safe-area-inset-bottom, 0px) + 80px)'
             }}
           >
             <AnimatePresence mode="wait">
@@ -70,9 +70,11 @@ export function MainLayout() {
       </div>
       
       {/* Bottom Bar Container - Fixed en mobile, normal en desktop */}
-      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto z-30">
-        <Player />
-        <MobileNav />
+      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto z-40 pointer-events-none">
+        <div className="pointer-events-auto">
+          <Player />
+          <MobileNav />
+        </div>
       </div>
     </div>
   );

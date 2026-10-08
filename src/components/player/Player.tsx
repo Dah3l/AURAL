@@ -272,7 +272,7 @@ export function Player() {
       </AnimatePresence>
 
       {/* Barra del reproductor - Web Layout */}
-      <div className="bg-[#08080C]/98 backdrop-blur-xl border-t border-[#2A2A35]">
+      <div className="bg-[#08080C] border-t border-[#2A2A35] relative z-40">
         {/* Layout Desktop - 3 columnas */}
         <div className="hidden md:flex items-center gap-4 px-4 h-[90px]">
           {/* Columna 1: Cover + Info */}
