@@ -38,16 +38,33 @@ export function SearchPage() {
         setLoading(true);
         setHasSearched(true);
         
+        const queryLower = debouncedQuery.toLowerCase();
+        
         // Búsquedas en paralelo
         const [trackResults, artistResults, albumResults] = await Promise.all([
-          searchTracks(debouncedQuery, 20),
-          searchArtists(debouncedQuery, 10),
-          searchAlbums(debouncedQuery, 10),
+          searchTracks(debouncedQuery, 30),
+          searchArtists(debouncedQuery, 20),
+          searchAlbums(debouncedQuery, 20),
         ]);
         
-        setTracks(jamendoTracksToTracks(trackResults));
-        setArtists(jamendoArtistsToArtists(artistResults));
-        setAlbums(jamendoAlbumsToAlbums(albumResults));
+        // Filtrar tracks: solo los que coinciden en el TÍTULO
+        const filteredTracks = jamendoTracksToTracks(trackResults).filter(track => 
+          track.title.toLowerCase().includes(queryLower)
+        );
+        
+        // Filtrar artistas: solo los que coinciden en el NOMBRE
+        const filteredArtists = jamendoArtistsToArtists(artistResults).filter(artist => 
+          artist.name.toLowerCase().includes(queryLower)
+        );
+        
+        // Filtrar álbumes: solo los que coinciden en el TÍTULO
+        const filteredAlbums = jamendoAlbumsToAlbums(albumResults).filter(album => 
+          album.title.toLowerCase().includes(queryLower)
+        );
+        
+        setTracks(filteredTracks);
+        setArtists(filteredArtists);
+        setAlbums(filteredAlbums);
       } catch (error) {
         console.error('Search error:', error);
       } finally {
@@ -76,7 +93,7 @@ export function SearchPage() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Busca canciones, artistas, álbumes..."
+          placeholder="Buscar por título, artista o álbum..."
           autoFocus
           className="w-full pl-10 md:pl-11 pr-4 py-2.5 md:py-3 rounded-xl bg-[#131318] border border-[#2A2A35] text-sm md:text-base text-[#F5F5F7] placeholder:text-[#8B8B96] focus:outline-none focus:border-[#7C3AED]/50 focus:bg-[#1E1E26] transition-all"
         />
@@ -84,7 +101,7 @@ export function SearchPage() {
 
       {/* Filtros */}
       {hasSearched && hasResults && (
-        <div className="flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-2 mb-3 md:mb-4 overflow-x-auto pb-2 scrollbar-hide">
           {filters.map(f => (
             <button
               key={f.key}
@@ -99,6 +116,13 @@ export function SearchPage() {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Nota explicativa */}
+      {hasSearched && hasResults && filter === 'all' && (
+        <p className="text-xs text-[#8B8B96] mb-4 md:mb-5">
+          Mostrando resultados organizados por categoría
+        </p>
       )}
 
       {/* Loading */}
@@ -136,7 +160,11 @@ export function SearchPage() {
             <section>
               <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
                 Canciones
-                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({tracks.length})</span>}
+                {filter === 'all' ? (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">({tracks.length})</span>
+                ) : (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">con "{debouncedQuery}" en el título</span>
+                )}
               </h2>
               <div className="space-y-0.5 md:space-y-1">
                 {(filter === 'tracks' ? tracks : tracks.slice(0, 5)).map((track, i) => (
@@ -170,7 +198,11 @@ export function SearchPage() {
             <section>
               <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
                 Artistas
-                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({artists.length})</span>}
+                {filter === 'all' ? (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">({artists.length})</span>
+                ) : (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">con "{debouncedQuery}" en el nombre</span>
+                )}
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
                 {(filter === 'artists' ? artists : artists.slice(0, 6)).map(artist => (
@@ -195,7 +227,11 @@ export function SearchPage() {
             <section>
               <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
                 Álbumes
-                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({albums.length})</span>}
+                {filter === 'all' ? (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">({albums.length})</span>
+                ) : (
+                  <span className="text-sm text-[#8B8B96] font-normal ml-2">con "{debouncedQuery}" en el título</span>
+                )}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {(filter === 'albums' ? albums : albums.slice(0, 5)).map(album => (
