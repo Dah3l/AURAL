@@ -12,6 +12,7 @@ import { AuralLogo } from '../shared/AuralLogo';
 
 export function Player() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const {
     currentTrack, queue, queueIndex, isPlaying, progress, duration, volume, isMuted,
     shuffle, repeat, showQueue, showExpanded,
@@ -19,7 +20,7 @@ export function Player() {
     setVolume, toggleMute, toggleShuffle, cycleRepeat,
     toggleQueue, toggleExpanded, playTrack,
   } = usePlayerStore();
-  const { toggleLike, isLiked, addToHistory } = useLibraryStore();
+  const { toggleLike, isLiked, addToHistory, playlists, addTrackToPlaylist } = useLibraryStore();
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -170,11 +171,7 @@ export function Player() {
                   />
                 </button>
                 <button
-                  onClick={() => {
-                    if (currentTrack) {
-                      toast.success('Añadido a la cola');
-                    }
-                  }}
+                  onClick={() => setShowPlaylistModal(true)}
                   className="p-3 rounded-full hover:bg-[#1E1E26] transition-colors"
                   aria-label="Añadir a playlist"
                 >
@@ -503,6 +500,112 @@ export function Player() {
           </div>
         </div>
       </div>
+
+      {/* Modal de añadir a playlist */}
+      <AnimatePresence>
+        {showPlaylistModal && currentTrack && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowPlaylistModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-[#2A2A35]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-[#F5F5F7]">Añadir a playlist</h3>
+                  <button
+                    onClick={() => setShowPlaylistModal(false)}
+                    className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                  >
+                    <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentTrack.cover}
+                    alt={currentTrack.title}
+                    className="w-12 h-12 rounded object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#F5F5F7] truncate">{currentTrack.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{currentTrack.artist}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de playlists */}
+              <div className="max-h-80 overflow-y-auto p-2">
+                {playlists.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ListMusic className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-3" strokeWidth={1.5} />
+                    <p className="text-[#8B8B96]">No tienes playlists</p>
+                    <p className="text-sm text-[#8B8B96]/60 mt-1">Crea una para empezar</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {playlists.map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        onClick={async () => {
+                          const { error } = await addTrackToPlaylist(playlist.id, currentTrack.id);
+                          if (error) {
+                            toast.error(error);
+                          } else {
+                            toast.success(`Añadida a "${playlist.title}"`);
+                            setShowPlaylistModal(false);
+                          }
+                        }}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#1E1E26] transition-colors text-left"
+                      >
+                        {playlist.cover_url ? (
+                          <img
+                            src={playlist.cover_url}
+                            alt={playlist.title}
+                            className="w-10 h-10 rounded object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                            <ListMusic className="w-5 h-5 text-white" strokeWidth={1.75} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#F5F5F7] truncate">{playlist.title}</p>
+                          <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer - Crear nueva playlist */}
+              <div className="p-3 border-t border-[#2A2A35]">
+                <button
+                  onClick={() => {
+                    setShowPlaylistModal(false);
+                    // Aquí podrías abrir el modal de crear playlist
+                    // Por ahora redirigimos a la biblioteca
+                    window.location.href = '/library';
+                  }}
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-[#1E1E26] hover:bg-[#2A2A35] transition-colors"
+                >
+                  <PlusCircle className="w-5 h-5 text-[#A78BFA]" strokeWidth={1.75} />
+                  <span className="text-sm font-medium text-[#F5F5F7]">Crear nueva playlist</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
