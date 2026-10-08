@@ -293,13 +293,12 @@ export function PlaylistPage() {
           </button>
           
           {/* Menú dropdown */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             {showMenu && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                transition={{ duration: 0.15 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15 } }}
+                exit={{ opacity: 0, scale: 0.95, y: -5, transition: { duration: 0.1 } }}
                 className="absolute left-0 md:right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
               >
                 <button
@@ -424,19 +423,19 @@ export function PlaylistPage() {
       )}
 
       {/* Modal de editar playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showEditModal && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !updating && setShowEditModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
@@ -503,19 +502,19 @@ export function PlaylistPage() {
       </AnimatePresence>
 
       {/* Modal de eliminar playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showDeleteModal && playlist && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !deleting && setShowDeleteModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
