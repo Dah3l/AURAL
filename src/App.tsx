@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useLibraryStore } from './store/libraryStore';
 import { MainLayout } from './components/layout/MainLayout';
@@ -11,6 +11,18 @@ import { ArtistPage } from './pages/Artist';
 import { ProfilePage } from './pages/Profile';
 import { GenrePage } from './pages/Genre';
 import { AuthPage } from './pages/Auth';
+
+// Wrapper para forzar re-mount cuando cambia el ID del artista
+function ArtistPageWrapper() {
+  const { id } = useParams<{ id: string }>();
+  return <ArtistPage key={id} />;
+}
+
+// Wrapper para forzar re-mount cuando cambia el ID de la playlist
+function PlaylistPageWrapper() {
+  const { id } = useParams<{ id: string }>();
+  return <PlaylistPage key={id} />;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, initialized } = useAuthStore();
@@ -62,8 +74,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-          <Route path="/artist/:id" element={<ArtistPage />} />
+          <Route path="/playlist/:id" element={<PlaylistPageWrapper />} />
+          <Route path="/artist/:id" element={<ArtistPageWrapper />} />
           <Route path="/genre/:genre" element={<GenrePage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
