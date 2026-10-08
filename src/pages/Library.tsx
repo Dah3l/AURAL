@@ -316,47 +316,21 @@ export function LibraryPage() {
           ) : (
             playlists.map(playlist => (
               view === 'grid' ? (
-                <div key={playlist.id} className="group relative">
-                  <Link to={`/playlist/${playlist.id}`} className="block">
-                    <div className="relative mb-3">
-                      {playlist.cover_url ? (
-                        <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                      ) : (
-                        <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
-                          <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                    <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
-                  </Link>
-                  {/* Botones de editar y eliminar */}
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleOpenEditModal(playlist);
-                      }}
-                      className="p-1.5 rounded-lg bg-[#131318]/90 hover:bg-[#1E1E26] border border-[#2A2A35] transition-all"
-                      aria-label="Editar playlist"
-                    >
-                      <Edit2 className="w-3.5 h-3.5 text-[#8B8B96] hover:text-[#F5F5F7]" strokeWidth={1.75} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleOpenDeleteModal(playlist);
-                      }}
-                      className="p-1.5 rounded-lg bg-[#131318]/90 hover:bg-red-500/20 border border-[#2A2A35] hover:border-red-500/50 transition-all"
-                      aria-label="Eliminar playlist"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-[#8B8B96] hover:text-red-400" strokeWidth={1.75} />
-                    </button>
+                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group block">
+                  <div className="relative mb-3">
+                    {playlist.cover_url ? (
+                      <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                    ) : (
+                      <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
+                        <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
+                      </div>
+                    )}
                   </div>
-                </div>
+                  <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                </Link>
               ) : (
-                <div key={playlist.id} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                  <Link to={`/playlist/${playlist.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
                     {playlist.cover_url ? (
                       <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
                     ) : (
@@ -368,25 +342,7 @@ export function LibraryPage() {
                       <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
                       <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
                     </div>
-                  </Link>
-                  {/* Botones de editar y eliminar */}
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleOpenEditModal(playlist)}
-                      className="p-1.5 rounded-lg hover:bg-[#2A2A35] transition-all"
-                      aria-label="Editar playlist"
-                    >
-                      <Edit2 className="w-4 h-4 text-[#8B8B96] hover:text-[#F5F5F7]" strokeWidth={1.75} />
-                    </button>
-                    <button
-                      onClick={() => handleOpenDeleteModal(playlist)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-                      aria-label="Eliminar playlist"
-                    >
-                      <Trash2 className="w-4 h-4 text-[#8B8B96] hover:text-red-400" strokeWidth={1.75} />
-                    </button>
-                  </div>
-                </div>
+                </Link>
               )
             ))
           )}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle, Music2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle, Music2, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
@@ -14,12 +14,27 @@ import type { Playlist } from '../types/database';
 
 export function PlaylistPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked, getPlaylistTracks } = useLibraryStore();
+  const { toggleLike, isLiked, getPlaylistTracks, updatePlaylist, deletePlaylist } = useLibraryStore();
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Estados para menú de opciones
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  // Estados para editar playlist
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [updating, setUpdating] = useState(false);
+  
+  // Estados para eliminar playlist
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function loadPlaylist() {
@@ -74,6 +89,86 @@ export function PlaylistPage() {
 
     loadPlaylist();
   }, [id, getPlaylistTracks]);
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+
+  // Función para abrir modal de editar
+  const handleOpenEdit = () => {
+    if (!playlist) return;
+    setEditTitle(playlist.title);
+    setEditDescription(playlist.description || '');
+    setShowMenu(false);
+    setShowEditModal(true);
+  };
+
+  // Función para editar playlist
+  const handleEditPlaylist = async () => {
+    if (!playlist || !editTitle.trim()) {
+      toast.error('El título es obligatorio');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const { error } = await updatePlaylist(playlist.id, {
+        title: editTitle,
+        description: editDescription,
+      });
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Playlist actualizada');
+        setShowEditModal(false);
+        // Recargar la playlist
+        setPlaylist({ ...playlist, title: editTitle, description: editDescription });
+      }
+    } catch (error) {
+      toast.error('Algo se desafinó. Intenta de nuevo.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Función para abrir modal de eliminar
+  const handleOpenDelete = () => {
+    setShowMenu(false);
+    setShowDeleteModal(true);
+  };
+
+  // Función para eliminar playlist
+  const handleDeletePlaylist = async () => {
+    if (!playlist) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await deletePlaylist(playlist.id);
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Playlist eliminada');
+        setShowDeleteModal(false);
+        navigate('/library');
+      }
+    } catch (error) {
+      toast.error('Algo se desafinó. Intenta de nuevo.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -164,18 +259,54 @@ export function PlaylistPage() {
         <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
           <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            toast.success('Link copiado. Ya es de quien quieras.');
-          }}
-          className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
-        >
-          <Share2 className="w-5 h-5" strokeWidth={1.75} />
-        </button>
-        <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
-          <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
+          >
+            <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
+          </button>
+          
+          {/* Menú dropdown */}
+          <AnimatePresence>
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 w-56 bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
+              >
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copiado. Ya es de quien quieras.');
+                    setShowMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
+                >
+                  <Share2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+                  <span className="text-sm text-[#F5F5F7]">Compartir</span>
+                </button>
+                <button
+                  onClick={handleOpenEdit}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
+                >
+                  <Edit2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+                  <span className="text-sm text-[#F5F5F7]">Editar playlist</span>
+                </button>
+                <div className="border-t border-[#2A2A35]" />
+                <button
+                  onClick={handleOpenDelete}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-left"
+                >
+                  <Trash2 className="w-4 h-4 text-red-400" strokeWidth={1.75} />
+                  <span className="text-sm text-red-400">Eliminar playlist</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Lista de canciones */}
@@ -266,6 +397,152 @@ export function PlaylistPage() {
           ))}
         </div>
       )}
+
+      {/* Modal de editar playlist */}
+      <AnimatePresence>
+        {showEditModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => !updating && setShowEditModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">Editar playlist</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Mi playlist"
+                    disabled={updating}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all disabled:opacity-50"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="¿De qué trata esta playlist?"
+                    rows={3}
+                    disabled={updating}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all resize-none disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    disabled={updating}
+                    className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleEditPlaylist}
+                    disabled={updating || !editTitle.trim()}
+                    className="flex-1 py-2.5 rounded-xl gradient-aura-glow text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updating ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de eliminar playlist */}
+      <AnimatePresence>
+        {showDeleteModal && playlist && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => !deleting && setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">Eliminar playlist</h2>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#1E1E26] border border-[#2A2A35] mb-4">
+                  {playlist.cover_url ? (
+                    <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                      <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#F5F5F7] truncate">{playlist.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-[#8B8B96]">
+                  ¿Estás seguro de que quieres eliminar esta playlist? Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeletePlaylist}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400 font-medium hover:bg-red-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
