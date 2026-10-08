@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { cn } from '../lib/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getTrackById as getJamendoTrack } from '../lib/jamendo';
 import { jamendoTrackToTrack } from '../lib/adapters';
 import type { Track, Artist, Album } from '../types';
@@ -26,9 +26,19 @@ export function LibraryPage() {
   const [albumsList, setAlbumsList] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks, createPlaylist, recentlyPlayed } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist, recentlyPlayed, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
   const navigate = useNavigate();
+
+  // Detectar si debemos abrir el modal de crear playlist
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setShowCreateModal(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Cargar tracks favoritos
   useEffect(() => {
@@ -132,11 +142,25 @@ export function LibraryPage() {
       if (error) {
         toast.error(error);
       } else {
-        toast.success('Playlist creada');
+        // Si hay una canción pendiente para agregar, agregarla automáticamente
+        if (pendingTrackToAdd && playlistId) {
+          const { error: addError } = await addTrackToPlaylist(playlistId, pendingTrackToAdd);
+          if (addError) {
+            toast.error(`Playlist creada pero no se pudo añadir la canción: ${addError}`);
+          } else {
+            toast.success(`Playlist creada y canción añadida`);
+          }
+          setPendingTrackToAdd(null);
+        } else {
+          toast.success('Playlist creada');
+        }
+        
         setShowCreateModal(false);
         setNewPlaylistTitle('');
         setNewPlaylistDescription('');
-        if (playlistId) {
+        
+        // Solo navegar si no venimos del modal de "Añadir a playlist"
+        if (!pendingTrackToAdd && playlistId) {
           navigate(`/playlist/${playlistId}`);
         }
       }
@@ -377,7 +401,13 @@ export function LibraryPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowCreateModal(false)}
+            onClick={() => {
+              setShowCreateModal(false);
+              // Si venimos del modal de "Añadir a playlist" y cancelamos, limpiar el pending track
+              if (pendingTrackToAdd) {
+                setPendingTrackToAdd(null);
+              }
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -387,14 +417,28 @@ export function LibraryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-[#F5F5F7]">Nueva playlist</h2>
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">
+                  {pendingTrackToAdd ? 'Crear playlist y añadir canción' : 'Nueva playlist'}
+                </h2>
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    if (pendingTrackToAdd) {
+                      setPendingTrackToAdd(null);
+                    }
+                  }}
                   className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
                 >
                   <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
                 </button>
               </div>
+
+              {pendingTrackToAdd && (
+                <div className="mb-4 p-3 rounded-lg bg-[#1E1E26] border border-[#2A2A35]">
+                  <p className="text-xs text-[#8B8B96] mb-1">Se añadirá a la nueva playlist:</p>
+                  <p className="text-sm font-medium text-[#F5F5F7]">Canción actual del reproductor</p>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -426,7 +470,12 @@ export function LibraryPage() {
 
                 <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      if (pendingTrackToAdd) {
+                        setPendingTrackToAdd(null);
+                      }
+                    }}
                     className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all"
                   >
                     Cancelar
@@ -436,7 +485,7 @@ export function LibraryPage() {
                     disabled={creating || !newPlaylistTitle.trim()}
                     className="flex-1 py-2.5 rounded-xl gradient-aura-glow text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {creating ? 'Creando...' : 'Crear'}
+                    {creating ? 'Creando...' : (pendingTrackToAdd ? 'Crear y añadir' : 'Crear')}
                   </button>
                 </div>
               </div>

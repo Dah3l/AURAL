@@ -9,6 +9,7 @@ interface LibraryState {
   likedTracks: string[];
   recentlyPlayed: string[];
   loading: boolean;
+  pendingTrackToAdd: string | null; // Track ID waiting to be added to a newly created playlist
   
   // Playlist actions
   fetchPlaylists: () => Promise<void>;
@@ -18,6 +19,7 @@ interface LibraryState {
   addTrackToPlaylist: (playlistId: string, trackId: string) => Promise<{ error: string | null }>;
   removeTrackFromPlaylist: (playlistId: string, trackId: string) => Promise<{ error: string | null }>;
   getPlaylistTracks: (playlistId: string) => Promise<string[]>;
+  setPendingTrackToAdd: (trackId: string | null) => void;
   
   // Likes actions
   fetchLikes: () => Promise<void>;
@@ -34,6 +36,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   likedTracks: [],
   recentlyPlayed: [],
   loading: false,
+  pendingTrackToAdd: null,
 
   // ===== PLAYLISTS =====
   
@@ -303,5 +306,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (error) {
       console.error('Error adding to history:', error);
     }
+  },
+
+  setPendingTrackToAdd: (trackId) => {
+    set({ pendingTrackToAdd: trackId });
   },
 }));
