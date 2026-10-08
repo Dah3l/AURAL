@@ -126,13 +126,12 @@ export function Player() {
       />
 
       {/* Vista expandida */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showExpanded && (
           <motion.div
             initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            animate={{ y: 0, transition: { type: 'spring', damping: 30, stiffness: 300 } }}
+            exit={{ y: '100%', transition: { type: 'spring', damping: 30, stiffness: 300 } }}
             className="fixed inset-0 z-[60] bg-[#08080C] flex flex-col"
           >
             <div className="flex items-center justify-between p-4">
@@ -227,13 +226,12 @@ export function Player() {
       </AnimatePresence>
 
       {/* Cola de reproducción - Mobile First */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showQueue && (
           <motion.div
             initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            animate={{ x: 0, transition: { type: 'spring', damping: 30, stiffness: 300 } }}
+            exit={{ x: '100%', transition: { type: 'spring', damping: 30, stiffness: 300 } }}
             className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-[#08080C] border-l border-[#2A2A35] z-[70] flex flex-col overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 border-b border-[#2A2A35]">
@@ -478,19 +476,19 @@ export function Player() {
       </div>
 
       {/* Modal de añadir a playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showPlaylistModal && currentTrack && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !addingToPlaylistId && setShowPlaylistModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
@@ -598,19 +596,19 @@ export function Player() {
       </AnimatePresence>
 
       {/* Modal de crear nueva playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showCreatePlaylistModal && currentTrack && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !creatingPlaylist && setShowCreatePlaylistModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >

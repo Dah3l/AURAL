@@ -473,12 +473,12 @@ export function LibraryPage() {
       )}
 
       {/* Modal de crear playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showCreateModal && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => {
               setShowCreateModal(false);
@@ -489,9 +489,9 @@ export function LibraryPage() {
             }}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
@@ -574,19 +574,19 @@ export function LibraryPage() {
       </AnimatePresence>
 
       {/* Modal de editar playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showEditModal && editingPlaylist && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !updating && setShowEditModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
@@ -653,19 +653,19 @@ export function LibraryPage() {
       </AnimatePresence>
 
       {/* Modal de eliminar playlist */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {showDeleteModal && deletingPlaylist && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => !deleting && setShowDeleteModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2, delay: 0.05 } }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
               className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
