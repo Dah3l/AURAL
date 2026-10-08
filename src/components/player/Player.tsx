@@ -104,12 +104,7 @@ export function Player() {
   }, [repeat, nextTrack]);
 
   if (!currentTrack) {
-    return (
-      <div className="h-20 bg-[#08080C] border-t border-[#2A2A35] flex items-center justify-center gap-3">
-        <AuralLogo size={20} />
-        <p className="text-[#8B8B96] text-sm">Elige algo para empezar a escuchar</p>
-      </div>
-    );
+    return null;
   }
 
   const liked = isLiked(currentTrack.id);

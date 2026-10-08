@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { Player } from '../player/Player';
 import { MobileNav } from './MobileNav';
+import { usePlayerStore } from '../../store/playerStore';
 
 export function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const location = useLocation();
+  const currentTrack = usePlayerStore((state) => state.currentTrack);
 
   // Aplicar tema al document
   useEffect(() => {
@@ -44,9 +48,23 @@ export function MainLayout() {
           <TopBar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
           <div
             id="main-content"
-            className="flex-1 overflow-y-auto px-4 md:px-6 pb-44 md:pb-4"
+            className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 transition-all duration-300"
+            style={{
+              paddingBottom: currentTrack 
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 136px)'
+                : 'calc(env(safe-area-inset-bottom, 0px) + 64px)'
+            }}
           >
-            <Outlet />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0, transition: { duration: 0.2 } }}
+                exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>
