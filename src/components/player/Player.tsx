@@ -393,93 +393,64 @@ export function Player() {
           </div>
         </div>
 
-        {/* Layout Móvil - Simétrico */}
-        <div className="md:hidden flex flex-col">
-          {/* Fila 1: Cover + Info */}
-          <div 
-            className="flex items-center gap-2 px-3 pt-2 cursor-pointer"
-            onClick={toggleExpanded}
-          >
-            <motion.img
-              key={currentTrack.id}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              src={currentTrack.cover}
-              alt={currentTrack.title}
-              className="w-9 h-9 rounded object-cover ring-1 ring-[#2A2A35] shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate text-[#F5F5F7]">
-                {currentTrack.title}
-              </p>
-              <p className="text-[10px] text-[#8B8B96] truncate">{currentTrack.artist}</p>
+        {/* Layout Móvil - Compacto estilo Spotify */}
+        <div className="md:hidden">
+          {/* Contenedor principal con barra de progreso integrada */}
+          <div className="relative px-3 py-2">
+            {/* Barra de progreso integrada en el borde inferior */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2A2A35]">
+              <div 
+                className="h-full bg-[#7C3AED] transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
-          </div>
 
-          {/* Fila 2: Controles simétricos */}
-          <div className="flex items-center justify-between px-6 py-2">
-            <button 
-              onClick={() => toggleLike(currentTrack.id)}
-              className="w-9 h-9 flex items-center justify-center"
-              aria-label={liked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-            >
-              <Heart
-                className={`w-5 h-5 transition-all ${liked ? 'text-[#A78BFA] fill-[#A78BFA]' : 'text-[#8B8B96]'}`}
-                strokeWidth={1.75}
+            {/* Contenido en una sola línea */}
+            <div className="flex items-center gap-2.5">
+              {/* Cover */}
+              <motion.img
+                key={currentTrack.id}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                src={currentTrack.cover}
+                alt={currentTrack.title}
+                className="w-10 h-10 rounded object-cover ring-1 ring-[#2A2A35] shrink-0 cursor-pointer"
+                onClick={toggleExpanded}
               />
-            </button>
-            <button 
-              onClick={prevTrack} 
-              className="w-9 h-9 flex items-center justify-center text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
-              aria-label="Anterior"
-            >
-              <SkipBack className="w-5 h-5 fill-current" strokeWidth={1.75} />
-            </button>
-            <button
-              onClick={togglePlay}
-              className="w-11 h-11 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-              aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-            >
-              {isPlaying ? (
-                <Pause className="w-5 h-5 text-white fill-white" />
-              ) : (
-                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-              )}
-            </button>
-            <button 
-              onClick={nextTrack} 
-              className="w-9 h-9 flex items-center justify-center text-[#8B8B96] hover:text-[#F5F5F7] transition-colors"
-              aria-label="Siguiente"
-            >
-              <SkipForward className="w-5 h-5 fill-current" strokeWidth={1.75} />
-            </button>
-            <button 
-              onClick={toggleQueue}
-              className="w-9 h-9 flex items-center justify-center"
-              aria-label="Cola de reproducción"
-            >
-              <ListMusic className={`w-5 h-5 transition-colors ${showQueue ? 'text-[#A78BFA]' : 'text-[#8B8B96]'}`} strokeWidth={1.75} />
-            </button>
-          </div>
 
-          {/* Barra de progreso móvil */}
-          <div className="px-3 pb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[#8B8B96] w-9 text-right font-mono shrink-0">
-                {formatTime(progress)}
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={duration || 1}
-                value={progress}
-                onChange={handleProgressChange}
-                className="flex-1 h-1"
-                style={{ background: `linear-gradient(to right, #7C3AED ${progressPercent}%, #2A2A35 ${progressPercent}%)` }}
-              />
-              <span className="text-[10px] text-[#8B8B96] w-9 font-mono shrink-0">
-                {duration > 0 ? formatTime(duration) : '—'}
-              </span>
+              {/* Título con scroll horizontal */}
+              <div className="flex-1 min-w-0">
+                <div className="marquee-container">
+                  <p className={`text-sm font-medium text-[#F5F5F7] ${
+                    currentTrack.title.length > 20 ? 'marquee-text' : 'truncate'
+                  }`}>
+                    {currentTrack.title}
+                  </p>
+                </div>
+                <p className="text-xs text-[#8B8B96] truncate">{currentTrack.artist}</p>
+              </div>
+
+              {/* Botón añadir a playlist */}
+              <button
+                onClick={() => setShowPlaylistModal(true)}
+                className="w-9 h-9 flex items-center justify-center text-[#8B8B96] hover:text-[#F5F5F7] transition-colors shrink-0"
+                aria-label="Añadir a playlist"
+              >
+                <PlusCircle className="w-5 h-5" strokeWidth={1.75} />
+              </button>
+
+              {/* Botón play/pause */}
+              <button
+                onClick={togglePlay}
+                className="w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
+                aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white fill-white" />
+                ) : (
+                  <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                )}
+              </button>
             </div>
           </div>
         </div>
