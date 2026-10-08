@@ -173,13 +173,38 @@ export function PlaylistPage() {
   if (loading) {
     return (
       <div className="pb-8">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="w-48 h-48 rounded-xl bg-[#131318] animate-pulse" />
-          <div className="flex-1">
-            <div className="h-4 w-24 bg-[#131318] rounded mb-2 animate-pulse" />
-            <div className="h-12 w-96 bg-[#131318] rounded mb-2 animate-pulse" />
-            <div className="h-4 w-64 bg-[#131318] rounded animate-pulse" />
+        {/* Skeleton header */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-xl bg-[#131318] animate-pulse shrink-0" />
+          <div className="text-center sm:text-left flex-1">
+            <div className="h-3 w-16 bg-[#131318] rounded mb-2 animate-pulse mx-auto sm:mx-0" />
+            <div className="h-8 sm:h-10 md:h-12 w-full max-w-md bg-[#131318] rounded mb-2 animate-pulse" />
+            <div className="h-4 w-full max-w-sm bg-[#131318] rounded mb-2 animate-pulse mx-auto sm:mx-0" />
+            <div className="h-4 w-32 bg-[#131318] rounded animate-pulse mx-auto sm:mx-0" />
           </div>
+        </div>
+        
+        {/* Skeleton acciones */}
+        <div className="flex items-center gap-2.5 md:gap-3 mb-5 md:mb-6">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#131318] animate-pulse" />
+          <div className="w-9 h-9 rounded-full bg-[#131318] animate-pulse" />
+          <div className="w-9 h-9 rounded-full bg-[#131318] animate-pulse" />
+        </div>
+        
+        {/* Skeleton tracks */}
+        <div className="space-y-1">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-2">
+              <div className="w-5 h-5 bg-[#131318] rounded animate-pulse" />
+              <div className="w-10 h-10 bg-[#131318] rounded animate-pulse" />
+              <div className="flex-1">
+                <div className="h-4 w-48 bg-[#131318] rounded animate-pulse mb-1" />
+                <div className="h-3 w-32 bg-[#131318] rounded animate-pulse" />
+              </div>
+              <div className="w-4 h-4 bg-[#131318] rounded animate-pulse" />
+              <div className="w-10 h-3 bg-[#131318] rounded animate-pulse" />
+            </div>
+          ))}
         </div>
       </div>
     );
