@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Search, Library, Plus, Music2, Heart,
   ChevronLeft, ChevronRight, ListMusic
@@ -34,28 +34,37 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     >
       {/* Logo + wordmark */}
       <div className="p-4 flex items-center gap-3">
-        {collapsed ? (
-          <div className="mx-auto">
-            <AuralLogo size={32} />
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-2.5"
-          >
-            <AuralLogo size={28} />
-            <div className="flex flex-col leading-none">
-              <span className="font-semibold text-[17px] tracking-tight text-[#F5F5F7]">
-                aural
-              </span>
-              <span className="text-[10px] text-[#8B8B96] tracking-wide mt-0.5">
-                el sonido, sin ruido
-              </span>
-            </div>
-          </motion.div>
-        )}
+        <AnimatePresence mode="popLayout">
+          {collapsed ? (
+            <motion.div
+              key="collapsed-logo"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
+              className="mx-auto"
+            >
+              <AuralLogo size={32} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="expanded-logo"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+              className="flex items-center gap-2.5"
+            >
+              <AuralLogo size={28} />
+              <div className="flex flex-col leading-none">
+                <span className="font-semibold text-[17px] tracking-tight text-[#F5F5F7]">
+                  aural
+                </span>
+                <span className="text-[10px] text-[#8B8B96] tracking-wide mt-0.5">
+                  el sonido, sin ruido
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Navegación */}
