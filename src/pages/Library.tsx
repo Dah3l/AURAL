@@ -8,6 +8,8 @@ import { cn } from '../lib/utils';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getTrackById as getJamendoTrack } from '../lib/jamendo';
 import { jamendoTrackToTrack } from '../lib/adapters';
+import { usePagination } from '../hooks/usePagination';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import type { Track, Artist, Album } from '../types';
 import type { Playlist } from '../types/database';
 
@@ -38,6 +40,17 @@ export function LibraryPage() {
   const [artistsList, setArtistsList] = useState<Artist[]>([]);
   const [albumsList, setAlbumsList] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Paginación para tracks favoritos
+  const {
+    visibleItems: visibleLikedTracks,
+    hasMore: hasMoreLiked,
+    loadMore: loadMoreLiked,
+    visibleCount: likedVisibleCount,
+    totalItems: likedTotalCount,
+    reset: resetLikedPagination,
+  } = usePagination(likedTracksList, { itemsPerPage: 15, loadMoreCount: 10 });
   
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -52,6 +65,11 @@ export function LibraryPage() {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
+
+  // Resetear paginación cuando cambia el tab
+  useEffect(() => {
+    resetLikedPagination();
+  }, [activeTab, resetLikedPagination]);
 
   // Cargar tracks favoritos
   useEffect(() => {
@@ -368,24 +386,39 @@ export function LibraryPage() {
               <p className="text-sm text-[#8B8B96]/60 mt-1">Dale like a las canciones que te gusten</p>
             </div>
           ) : (
-            likedTracksList.map((track, i) => (
-              <motion.button
-                key={track.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                onClick={() => playTrack(track, likedTracksList)}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors group text-left"
-              >
-                <span className="w-6 text-center text-sm text-[#8B8B96] font-mono">{i + 1}</span>
-                <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
-                  <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
-                </div>
-                <span className="text-xs text-[#8B8B96] font-mono">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
-              </motion.button>
-            ))
+            <>
+              {visibleLikedTracks.map((track, i) => (
+                <motion.button
+                  key={track.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  onClick={() => playTrack(track, likedTracksList)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors group text-left"
+                >
+                  <span className="w-6 text-center text-sm text-[#8B8B96] font-mono">{i + 1}</span>
+                  <img src={track.cover} alt={track.title} className="w-10 h-10 rounded object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+                  </div>
+                  <span className="text-xs text-[#8B8B96] font-mono">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
+                </motion.button>
+              ))}
+              <LoadMoreButton
+                onClick={() => {
+                  setLoadingMore(true);
+                  setTimeout(() => {
+                    loadMoreLiked();
+                    setLoadingMore(false);
+                  }, 300);
+                }}
+                hasMore={hasMoreLiked}
+                visibleCount={likedVisibleCount}
+                totalCount={likedTotalCount}
+                loading={loadingMore}
+              />
+            </>
           )}
         </div>
       )}

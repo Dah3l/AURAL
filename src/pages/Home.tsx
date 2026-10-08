@@ -6,6 +6,8 @@ import { useLibraryStore } from '../store/libraryStore';
 import { getPopularTracks, getPopularArtists, getFeaturedTracks, getNewReleases } from '../lib/jamendo';
 import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
 import { getGreeting } from '../lib/utils';
+import { usePagination } from '../hooks/usePagination';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { Link } from 'react-router-dom';
 import { Track, Artist } from '../types';
 
@@ -27,6 +29,16 @@ export function Home() {
   const [newReleases, setNewReleases] = useState<Track[]>([]);
   const [popularArtists, setPopularArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMorePopular, setLoadingMorePopular] = useState(false);
+
+  // Paginación para tracks populares
+  const {
+    visibleItems: visiblePopularTracks,
+    hasMore: hasMorePopular,
+    loadMore: loadMorePopular,
+    visibleCount: popularVisibleCount,
+    totalItems: popularTotalCount,
+  } = usePagination(popularTracks, { itemsPerPage: 6, loadMoreCount: 6 });
 
   useEffect(() => {
     async function loadData() {
@@ -189,9 +201,12 @@ export function Home() {
         <motion.section variants={item} className="mb-8 md:mb-10">
           <div className="flex items-baseline justify-between mb-3 md:mb-4">
             <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-[#F5F5F7]">Lo más popular</h2>
+            {hasMorePopular && (
+              <span className="text-xs text-[#8B8B96]">{popularVisibleCount} de {popularTotalCount}</span>
+            )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            {popularTracks.slice(0, 6).map(track => (
+            {visiblePopularTracks.map(track => (
               <motion.div
                 key={track.id}
                 whileHover={{ y: -4 }}
@@ -209,6 +224,19 @@ export function Home() {
               </motion.div>
             ))}
           </div>
+          <LoadMoreButton
+            onClick={() => {
+              setLoadingMorePopular(true);
+              setTimeout(() => {
+                loadMorePopular();
+                setLoadingMorePopular(false);
+              }, 300);
+            }}
+            hasMore={hasMorePopular}
+            visibleCount={popularVisibleCount}
+            totalCount={popularTotalCount}
+            loading={loadingMorePopular}
+          />
         </motion.section>
       )}
 
