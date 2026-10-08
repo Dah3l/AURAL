@@ -473,7 +473,7 @@ export function LibraryPage() {
       )}
 
       {/* Modal de crear playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showCreateModal && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -574,7 +574,7 @@ export function LibraryPage() {
       </AnimatePresence>
 
       {/* Modal de editar playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showEditModal && editingPlaylist && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -653,7 +653,7 @@ export function LibraryPage() {
       </AnimatePresence>
 
       {/* Modal de eliminar playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showDeleteModal && deletingPlaylist && (
           <motion.div
             initial={{ opacity: 0 }}
