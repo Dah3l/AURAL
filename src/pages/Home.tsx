@@ -61,15 +61,34 @@ export function Home() {
   if (loading) {
     return (
       <div className="pb-8">
-        <div className="mb-8">
-          <div className="h-4 w-32 bg-[#131318] rounded mb-2 animate-pulse" />
-          <div className="h-10 w-96 bg-[#131318] rounded animate-pulse" />
+        {/* Skeleton saludo */}
+        <div className="mb-6 md:mb-8">
+          <div className="h-3 w-24 bg-[#131318] rounded mb-2 animate-pulse" />
+          <div className="h-8 sm:h-10 w-full max-w-md bg-[#131318] rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
+        
+        {/* Skeleton escuchado recientemente */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-8 md:mb-10">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-[#131318] rounded-xl animate-pulse" />
+            <div key={i} className="h-14 md:h-16 bg-[#131318] rounded-xl animate-pulse" />
           ))}
         </div>
+        
+        {/* Skeleton secciones */}
+        {[...Array(3)].map((_, sectionIdx) => (
+          <div key={sectionIdx} className="mb-8 md:mb-10">
+            <div className="h-5 w-48 bg-[#131318] rounded mb-3 md:mb-4 animate-pulse" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i}>
+                  <div className="w-full aspect-square rounded-xl bg-[#131318] animate-pulse mb-2" />
+                  <div className="h-3 w-full bg-[#131318] rounded animate-pulse mb-1" />
+                  <div className="h-2.5 w-3/4 bg-[#131318] rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
