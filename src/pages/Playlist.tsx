@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle, Music2, Edit2, Trash2, X } from 'lucide-react';
+import { Play, Pause, Heart, Share2, Clock, MoreHorizontal, Shuffle, Music2, Edit2, Trash2, X, Bookmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { supabase } from '../lib/supabase';
-import { getTrackById as getJamendoTrack } from '../lib/jamendo';
-import { jamendoTrackToTrack } from '../lib/adapters';
+import { getTrackById as getJamendoTrack, getAlbumTracks } from '../lib/jamendo';
+import { jamendoTrackToTrack, jamendoTracksToTracks } from '../lib/adapters';
 import { formatDuration, formatTime } from '../lib/utils';
 import { usePagination } from '../hooks/usePagination';
 import { LoadMoreButton } from '../components/shared/LoadMoreButton';
@@ -18,7 +18,7 @@ export function PlaylistPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked, getPlaylistTracks, updatePlaylist, deletePlaylist } = useLibraryStore();
+  const { toggleLike, isLiked, getPlaylistTracks, updatePlaylist, deletePlaylist, toggleSaveAlbum, isAlbumSaved } = useLibraryStore();
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
@@ -55,6 +55,36 @@ export function PlaylistPage() {
       
       try {
         setLoading(true);
+        
+        // Detectar si es un álbum de Jamendo
+        if (id.startsWith('jamendo-album-')) {
+          const jamendoAlbumId = id.replace('jamendo-album-', '');
+          
+          // Cargar tracks del álbum desde Jamendo
+          const jamendoTracks = await getAlbumTracks(jamendoAlbumId);
+          const tracks = jamendoTracksToTracks(jamendoTracks);
+          
+          if (tracks.length === 0) {
+            setPlaylist(null);
+            return;
+          }
+          
+          // Construir un objeto playlist compatible usando datos del primer track
+          const firstTrack = tracks[0];
+          const mockPlaylist: Playlist = {
+            id: id,
+            user_id: '',
+            title: firstTrack.album,
+            description: `Álbum de ${firstTrack.artist}`,
+            cover_url: firstTrack.cover,
+            is_public: true,
+            created_at: new Date().toISOString(),
+          };
+          
+          setPlaylist(mockPlaylist);
+          setPlaylistTracks(tracks);
+          return;
+        }
         
         // Obtener playlist de Supabase
         const { data: playlistData, error: playlistError } = await supabase
@@ -236,6 +266,7 @@ export function PlaylistPage() {
     );
   }
 
+  const isJamendoAlbum = id?.startsWith('jamendo-album-');
   const totalDuration = playlistTracks.reduce((sum, t) => sum + t.duration, 0);
   const isCurrentPlaylist = playlistTracks.some(t => t.id === currentTrack?.id);
 
@@ -269,7 +300,7 @@ export function PlaylistPage() {
           </motion.div>
         )}
         <div className="text-center sm:text-left">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-1.5 md:mb-2">Playlist</p>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-[#8B8B96] font-medium mb-1.5 md:mb-2">{isJamendoAlbum ? 'Álbum' : 'Playlist'}</p>
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-1.5 md:mb-2 text-[#F5F5F7]">{playlist.title}</h1>
           {playlist.description && (
             <p className="text-sm md:text-base text-[#8B8B96] mb-2 md:mb-3 line-clamp-2">{playlist.description}</p>
@@ -302,53 +333,82 @@ export function PlaylistPage() {
         <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
           <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
-        <div className="relative" ref={menuRef}>
+        
+        {/* Botón guardar álbum (solo para álbumes de Jamendo) */}
+        {isJamendoAlbum && (
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
+            onClick={() => {
+              const wasSaved = isAlbumSaved(id!);
+              toggleSaveAlbum(id!, playlist.title, playlist.cover_url, playlist.description?.replace('Álbum de ', '') || '');
+              toast.success(
+                wasSaved 
+                  ? `"${playlist.title}" eliminado de tu colección` 
+                  : `"${playlist.title}" guardado en tu colección`
+              );
+            }}
+            className={`p-2 rounded-full transition-colors ${
+              isAlbumSaved(id!) 
+                ? 'bg-[#7C3AED]/20 text-[#A78BFA] hover:bg-[#7C3AED]/30' 
+                : 'hover:bg-[#1E1E26] active:bg-[#1E1E26] text-[#8B8B96] hover:text-[#F5F5F7]'
+            }`}
           >
-            <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
+            <Bookmark 
+              className={`w-5 h-5 ${isAlbumSaved(id!) ? 'fill-[#A78BFA]' : ''}`} 
+              strokeWidth={1.75} 
+            />
           </button>
-          
-          {/* Menú dropdown */}
-          <AnimatePresence mode="popLayout">
-            {showMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15 } }}
-                exit={{ opacity: 0, scale: 0.95, y: -5, transition: { duration: 0.1 } }}
-                className="absolute left-0 md:right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
-              >
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast.success('Link copiado. Ya es de quien quieras.');
-                    setShowMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
+        )}
+        
+        {/* Menú de opciones (solo para playlists de Supabase) */}
+        {!isJamendoAlbum && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
+            >
+              <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
+            </button>
+              
+            {/* Menú dropdown */}
+            <AnimatePresence mode="popLayout">
+              {showMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                  animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15 } }}
+                  exit={{ opacity: 0, scale: 0.95, y: -5, transition: { duration: 0.1 } }}
+                  className="absolute left-0 md:right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#131318] border border-[#2A2A35] rounded-xl shadow-2xl overflow-hidden z-50"
                 >
-                  <Share2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
-                  <span className="text-sm text-[#F5F5F7]">Compartir</span>
-                </button>
-                <button
-                  onClick={handleOpenEdit}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
-                >
-                  <Edit2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
-                  <span className="text-sm text-[#F5F5F7]">Editar playlist</span>
-                </button>
-                <div className="border-t border-[#2A2A35]" />
-                <button
-                  onClick={handleOpenDelete}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-left"
-                >
-                  <Trash2 className="w-4 h-4 text-red-400" strokeWidth={1.75} />
-                  <span className="text-sm text-red-400">Eliminar playlist</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast.success('Link copiado. Ya es de quien quieras.');
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
+                  >
+                    <Share2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+                    <span className="text-sm text-[#F5F5F7]">Compartir</span>
+                  </button>
+                  <button
+                    onClick={handleOpenEdit}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1E1E26] transition-colors text-left"
+                  >
+                    <Edit2 className="w-4 h-4 text-[#8B8B96]" strokeWidth={1.75} />
+                    <span className="text-sm text-[#F5F5F7]">Editar playlist</span>
+                  </button>
+                  <div className="border-t border-[#2A2A35]" />
+                  <button
+                    onClick={handleOpenDelete}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-left"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" strokeWidth={1.75} />
+                    <span className="text-sm text-red-400">Eliminar playlist</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* Lista de canciones */}
