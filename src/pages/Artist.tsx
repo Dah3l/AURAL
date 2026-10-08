@@ -19,6 +19,7 @@ export function ArtistPage() {
   const [artistAlbums, setArtistAlbums] = useState<Album[]>([]);
   const [relatedArtists, setRelatedArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'tracks' | 'albums'>('all');
 
   useEffect(() => {
     async function loadArtist() {
@@ -271,8 +272,36 @@ export function ArtistPage() {
         </button>
       </div>
 
+      {/* Filtros */}
+      <div className="flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        {[
+          { key: 'all' as const, label: 'Todo' },
+          { key: 'tracks' as const, label: 'Canciones' },
+          { key: 'albums' as const, label: 'Álbumes' },
+        ].map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              filter === f.key
+                ? 'bg-[#F5F5F7] text-[#08080C]'
+                : 'bg-[#131318] text-[#8B8B96] border border-[#2A2A35] hover:bg-[#1E1E26] hover:text-[#F5F5F7]'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Nota explicativa */}
+      {filter === 'all' && (
+        <p className="text-xs text-[#8B8B96] mb-4 md:mb-5">
+          Mostrando resultados organizados por categoría
+        </p>
+      )}
+
       {/* Canciones */}
-      {artistTracks.length > 0 && (
+      {artistTracks.length > 0 && (filter === 'all' || filter === 'tracks') && (
         <section className="mb-8 md:mb-10">
           <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
             Canciones
@@ -316,7 +345,7 @@ export function ArtistPage() {
       )}
 
       {/* Álbumes */}
-      {artistAlbums.length > 0 && (
+      {artistAlbums.length > 0 && (filter === 'all' || filter === 'albums') && (
         <section className="mb-8 md:mb-10">
           <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
             Álbumes
