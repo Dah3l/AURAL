@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2, UserCheck, UserPlus } from 'lucide-react';
+import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2, UserCheck, UserPlus, Disc3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { getTracksByArtist, getPopularArtists } from '../lib/jamendo';
 import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
-import { formatNumber } from '../lib/utils';
-import { Track, Artist } from '../types';
+import { Track, Artist, Album } from '../types';
 
 export function ArtistPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +16,7 @@ export function ArtistPage() {
 
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artistTracks, setArtistTracks] = useState<Track[]>([]);
+  const [artistAlbums, setArtistAlbums] = useState<Album[]>([]);
   const [relatedArtists, setRelatedArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,9 +30,9 @@ export function ArtistPage() {
         // Extraer ID real de Jamendo (quitar prefijo "jamendo-artist-")
         const jamendoArtistId = id.replace('jamendo-artist-', '');
         
-        // Cargar tracks del artista y artistas populares
+        // Cargar tracks del artista (más cantidad) y artistas populares
         const [tracks, allArtists] = await Promise.all([
-          getTracksByArtist(jamendoArtistId, 20),
+          getTracksByArtist(jamendoArtistId, 50),
           getPopularArtists(10)
         ]);
         
@@ -53,6 +53,25 @@ export function ArtistPage() {
             albums: [],
           });
         }
+        
+        // Agrupar tracks por álbum
+        const albumsMap = new Map<string, Album>();
+        for (const track of convertedTracks) {
+          if (!albumsMap.has(track.albumId)) {
+            albumsMap.set(track.albumId, {
+              id: track.albumId,
+              title: track.album,
+              artist: track.artist,
+              artistId: track.artistId,
+              cover: track.cover,
+              year: 2024,
+              tracks: [],
+              type: 'album',
+            });
+          }
+          albumsMap.get(track.albumId)!.tracks.push(track.id);
+        }
+        setArtistAlbums(Array.from(albumsMap.values()));
         
         // Filtrar artistas relacionados (excluir el actual)
         const related = jamendoArtistsToArtists(allArtists)
@@ -79,7 +98,7 @@ export function ArtistPage() {
           <div className="text-center sm:text-left flex-1">
             <div className="h-3 w-20 bg-[#131318] rounded mb-2 animate-pulse mx-auto sm:mx-0" />
             <div className="h-8 sm:h-10 w-full max-w-xs bg-[#131318] rounded mb-2 animate-pulse" />
-            <div className="h-4 w-32 bg-[#131318] rounded animate-pulse mx-auto sm:mx-0" />
+            <div className="h-4 w-40 bg-[#131318] rounded animate-pulse mx-auto sm:mx-0" />
           </div>
         </div>
         
@@ -91,11 +110,11 @@ export function ArtistPage() {
           <div className="w-9 h-9 rounded-full bg-[#131318] animate-pulse" />
         </div>
         
-        {/* Skeleton tracks */}
+        {/* Skeleton canciones */}
         <div className="mb-8 md:mb-10">
           <div className="h-5 w-32 bg-[#131318] rounded mb-3 md:mb-4 animate-pulse" />
           <div className="space-y-1">
-            {[...Array(5)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-2">
                 <div className="w-5 h-5 bg-[#131318] rounded animate-pulse" />
                 <div className="w-10 h-10 bg-[#131318] rounded animate-pulse" />
@@ -103,6 +122,20 @@ export function ArtistPage() {
                   <div className="h-4 w-48 bg-[#131318] rounded animate-pulse mb-1" />
                   <div className="h-3 w-32 bg-[#131318] rounded animate-pulse" />
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton álbumes */}
+        <div className="mb-8 md:mb-10">
+          <div className="h-5 w-24 bg-[#131318] rounded mb-3 md:mb-4 animate-pulse" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i}>
+                <div className="w-full aspect-square rounded-xl bg-[#131318] animate-pulse mb-2" />
+                <div className="h-3 w-full bg-[#131318] rounded animate-pulse mb-1" />
+                <div className="h-2.5 w-2/3 bg-[#131318] rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -119,7 +152,6 @@ export function ArtistPage() {
     );
   }
 
-  const topTracks = artistTracks.slice(0, 5);
   const isCurrentArtist = artistTracks.some(t => t.id === currentTrack?.id);
 
   const handlePlayAll = () => {
@@ -127,6 +159,13 @@ export function ArtistPage() {
       togglePlay();
     } else if (artistTracks.length > 0) {
       playTrack(artistTracks[0], artistTracks);
+    }
+  };
+
+  const handleShuffle = () => {
+    if (artistTracks.length > 0) {
+      const shuffled = [...artistTracks].sort(() => Math.random() - 0.5);
+      playTrack(shuffled[0], shuffled);
     }
   };
 
@@ -151,7 +190,15 @@ export function ArtistPage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-1.5 md:mb-2 text-[#F5F5F7]">{artist.name}</h1>
-            <p className="text-sm md:text-base text-[#8B8B96]">{formatNumber(artist.monthlyListeners)} oyentes mensuales</p>
+            <div className="flex items-center gap-2 text-sm md:text-base text-[#8B8B96]">
+              <span>{artist.genre}</span>
+              {artistTracks.length > 0 && (
+                <>
+                  <span>·</span>
+                  <span>{artistTracks.length} canciones</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -213,7 +260,10 @@ export function ArtistPage() {
             )}
           </AnimatePresence>
         </motion.button>
-        <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
+        <button
+          onClick={handleShuffle}
+          className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]"
+        >
           <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
         <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
@@ -221,17 +271,20 @@ export function ArtistPage() {
         </button>
       </div>
 
-      {/* Populares */}
-      {topTracks.length > 0 && (
+      {/* Canciones */}
+      {artistTracks.length > 0 && (
         <section className="mb-8 md:mb-10">
-          <h2 className="text-lg sm:text-xl font-semibold tracking-tight mb-3 md:mb-4 text-[#F5F5F7]">Populares</h2>
-          <div className="space-y-0 md:space-y-1">
-            {topTracks.map((track, i) => (
+          <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+            Canciones
+            <span className="text-sm text-[#8B8B96] font-normal ml-2">({artistTracks.length})</span>
+          </h2>
+          <div className="space-y-0.5 md:space-y-1">
+            {artistTracks.map((track, i) => (
               <motion.div
                 key={track.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.03 }}
                 onClick={() => playTrack(track, artistTracks)}
                 className="flex items-center gap-2.5 md:gap-4 px-2 md:px-4 py-2 rounded-lg hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors group cursor-pointer"
               >
@@ -242,7 +295,7 @@ export function ArtistPage() {
                   <p className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-[#A78BFA]' : 'text-[#F5F5F7]'}`}>
                     {track.title}
                   </p>
-                  <p className="text-xs text-[#8B8B96] truncate">{formatNumber(track.playCount)} reproducciones</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{track.album}</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
@@ -262,14 +315,47 @@ export function ArtistPage() {
         </section>
       )}
 
-      {/* Relacionados */}
+      {/* Álbumes */}
+      {artistAlbums.length > 0 && (
+        <section className="mb-8 md:mb-10">
+          <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+            Álbumes
+            <span className="text-sm text-[#8B8B96] font-normal ml-2">({artistAlbums.length})</span>
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {artistAlbums.map((album) => (
+              <motion.div
+                key={album.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="group cursor-pointer"
+              >
+                <Link to={`/playlist/${album.id}`}>
+                  <div className="relative mb-2">
+                    <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                    <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                      <Disc3 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
+                  <p className="text-xs text-[#8B8B96] truncate">{album.tracks.length} canciones · {album.year}</p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Artistas similares */}
       {relatedArtists.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xl font-semibold tracking-tight mb-4 text-[#F5F5F7]">Artistas similares</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+            Artistas similares
+          </h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
             {relatedArtists.map(a => (
               <Link key={a.id} to={`/artist/${a.id}`} className="group">
-                <motion.div whileHover={{ y: -4 }} className="relative mb-3">
+                <motion.div whileHover={{ y: -4 }} className="relative mb-2">
                   <img src={a.image} alt={a.name} className="w-full aspect-square rounded-full object-cover shadow-lg ring-1 ring-[#2A2A35]" />
                   <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                     <Play className="w-5 h-5 text-white fill-white ml-0.5" strokeWidth={1.75} />
