@@ -219,7 +219,7 @@ export function useSearchEngine(): SearchEngineState & SearchEngineActions {
       setError(false);
       setHasSearched(true);
 
-      const rawJamendoTracks = await searchAllUnified(searchQuery, 20, controller.signal);
+      const rawJamendoTracks = await searchAllUnified(searchQuery, 200, controller.signal);
       const rawTracks = jamendoTracksToTracks(rawJamendoTracks);
       const filtered = filterResults(rawTracks, normalized);
 
