@@ -136,30 +136,58 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   addTrackToPlaylist: async (playlistId, trackId) => {
     try {
+      console.log('[addTrackToPlaylist] Iniciando...', { playlistId, trackId });
+      
+      // Verificar si la canción ya existe en la playlist
+      const { data: existingTrack, error: checkError } = await supabase
+        .from('playlist_tracks')
+        .select('track_id')
+        .eq('playlist_id', playlistId)
+        .eq('track_id', trackId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('[addTrackToPlaylist] Error verificando existencia:', checkError);
+      }
+
+      if (existingTrack) {
+        console.log('[addTrackToPlaylist] La canción ya existe en la playlist');
+        return { error: 'Esta canción ya está en la playlist' };
+      }
+
       // Obtener la posición actual más alta
-      const { data: tracks } = await supabase
+      const { data: tracks, error: tracksError } = await supabase
         .from('playlist_tracks')
         .select('position')
         .eq('playlist_id', playlistId)
         .order('position', { ascending: false })
         .limit(1);
 
-      const position = tracks && tracks.length > 0 ? tracks[0].position + 1 : 0;
+      if (tracksError) {
+        console.error('[addTrackToPlaylist] Error obteniendo posiciones:', tracksError);
+      }
 
-      const { error } = await supabase
+      const position = tracks && tracks.length > 0 ? tracks[0].position + 1 : 0;
+      console.log('[addTrackToPlaylist] Nueva posición:', position);
+
+      const { data: insertData, error: insertError } = await supabase
         .from('playlist_tracks')
         .insert({
           playlist_id: playlistId,
           track_id: trackId,
           position,
-        });
+        })
+        .select();
 
-      if (error) {
-        return { error: error.message };
+      if (insertError) {
+        console.error('[addTrackToPlaylist] Error insertando:', insertError);
+        return { error: insertError.message };
       }
 
+      console.log('[addTrackToPlaylist] Canción añadida exitosamente:', insertData);
       return { error: null };
     } catch (error: any) {
+      console.error('[addTrackToPlaylist] Error inesperado:', error);
       return { error: error.message || 'Error al añadir canción' };
     }
   },
@@ -184,19 +212,28 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   getPlaylistTracks: async (playlistId) => {
     try {
+      console.log('[getPlaylistTracks] Obteniendo tracks para playlist:', playlistId);
+      
       const { data, error } = await supabase
         .from('playlist_tracks')
-        .select('track_id')
+        .select('track_id, position')
         .eq('playlist_id', playlistId)
         .order('position', { ascending: true });
 
-      if (error || !data) {
+      if (error) {
+        console.error('[getPlaylistTracks] Error:', error);
         return [];
       }
 
+      if (!data) {
+        console.log('[getPlaylistTracks] No hay datos');
+        return [];
+      }
+
+      console.log('[getPlaylistTracks] Tracks encontrados:', data.length, data);
       return data.map(t => t.track_id);
     } catch (error) {
-      console.error('Error getting playlist tracks:', error);
+      console.error('[getPlaylistTracks] Error inesperado:', error);
       return [];
     }
   },
