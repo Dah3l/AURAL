@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2, UserCheck, UserPlus, Disc3 } from 'lucide-react';
+import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2, UserCheck, UserPlus, Disc3, Bookmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
@@ -12,7 +12,7 @@ import { Track, Artist, Album } from '../types';
 export function ArtistPage() {
   const { id } = useParams<{ id: string }>();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked, toggleFollowArtist, isFollowed } = useLibraryStore();
+  const { toggleLike, isLiked, toggleFollowArtist, isFollowed, toggleSaveAlbum, isAlbumSaved } = useLibraryStore();
 
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artistTracks, setArtistTracks] = useState<Track[]>([]);
@@ -376,15 +376,41 @@ export function ArtistPage() {
                 key={album.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group cursor-pointer"
+                className="group"
               >
-                <Link to={`/playlist/${album.id}`}>
-                  <div className="relative mb-2">
+                <div className="relative mb-2">
+                  <Link to={`/playlist/${album.id}`}>
                     <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
                     <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                       <Disc3 className="w-5 h-5 text-white" strokeWidth={1.75} />
                     </div>
-                  </div>
+                  </Link>
+                  {/* Botón guardar álbum */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const wasSaved = isAlbumSaved(album.id);
+                      toggleSaveAlbum(album.id, album.title, album.cover, album.artist);
+                      toast.success(
+                        wasSaved 
+                          ? `"${album.title}" eliminado de tu colección` 
+                          : `"${album.title}" guardado en tu colección`
+                      );
+                    }}
+                    className="absolute top-2 left-2 p-1.5 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Bookmark 
+                      className={`w-4 h-4 transition-colors ${
+                        isAlbumSaved(album.id) 
+                          ? 'text-[#A78BFA] fill-[#A78BFA]' 
+                          : 'text-white'
+                      }`}
+                      strokeWidth={1.75}
+                    />
+                  </button>
+                </div>
+                <Link to={`/playlist/${album.id}`}>
                   <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
                   <p className="text-xs text-[#8B8B96] truncate">{album.tracks.length} canciones · {album.year}</p>
                 </Link>

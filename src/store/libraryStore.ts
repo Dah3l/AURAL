@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
-import type { Playlist, UserLike, ListeningHistory, FollowedArtist } from '../types/database';
+import type { Playlist, UserLike, ListeningHistory, FollowedArtist, SavedAlbum } from '../types/database';
 
 interface LibraryState {
   // State
@@ -9,6 +9,7 @@ interface LibraryState {
   likedTracks: string[];
   recentlyPlayed: string[];
   followedArtists: FollowedArtist[];
+  savedAlbums: SavedAlbum[];
   loading: boolean;
   pendingTrackToAdd: string | null; // Track ID waiting to be added to a newly created playlist
   
@@ -35,6 +36,11 @@ interface LibraryState {
   fetchFollowedArtists: () => void;
   toggleFollowArtist: (artistId: string, artistName: string, artistImage: string) => void;
   isFollowed: (artistId: string) => boolean;
+  
+  // Saved albums actions
+  fetchSavedAlbums: () => Promise<void>;
+  toggleSaveAlbum: (albumId: string, albumTitle: string, albumCover: string | null, artistName: string) => Promise<void>;
+  isAlbumSaved: (albumId: string) => boolean;
 }
 
 // Helper para localStorage de artistas seguidos
@@ -58,6 +64,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   likedTracks: [],
   recentlyPlayed: [],
   followedArtists: [],
+  savedAlbums: [],
   loading: false,
   pendingTrackToAdd: null,
 
@@ -411,5 +418,91 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   isFollowed: (artistId) => {
     return get().followedArtists.some(a => a.artist_id === artistId);
+  },
+
+  // ===== SAVED ALBUMS =====
+  
+  fetchSavedAlbums: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('saved_albums')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('saved_at', { ascending: false });
+
+      if (!error && data) {
+        set({ savedAlbums: data });
+      }
+    } catch (error) {
+      console.error('Error fetching saved albums:', error);
+    }
+  },
+
+  toggleSaveAlbum: async (albumId, albumTitle, albumCover, artistName) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const { savedAlbums } = get();
+    const isCurrentlySaved = savedAlbums.some(a => a.album_id === albumId);
+
+    // Optimistic update
+    if (isCurrentlySaved) {
+      set({ savedAlbums: savedAlbums.filter(a => a.album_id !== albumId) });
+    } else {
+      const newAlbum: SavedAlbum = {
+        id: `saved-${Date.now()}`,
+        user_id: user.id,
+        album_id: albumId,
+        album_title: albumTitle,
+        album_cover: albumCover,
+        artist_name: artistName,
+        saved_at: new Date().toISOString(),
+      };
+      set({ savedAlbums: [newAlbum, ...savedAlbums] });
+    }
+
+    try {
+      if (isCurrentlySaved) {
+        await supabase
+          .from('saved_albums')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('album_id', albumId);
+      } else {
+        await supabase
+          .from('saved_albums')
+          .insert({
+            user_id: user.id,
+            album_id: albumId,
+            album_title: albumTitle,
+            album_cover: albumCover,
+            artist_name: artistName,
+          });
+      }
+    } catch (error) {
+      console.error('Error toggling saved album:', error);
+      // Revert on error
+      if (isCurrentlySaved) {
+        const revertedAlbum: SavedAlbum = {
+          id: `saved-${Date.now()}`,
+          user_id: user.id,
+          album_id: albumId,
+          album_title: albumTitle,
+          album_cover: albumCover,
+          artist_name: artistName,
+          saved_at: new Date().toISOString(),
+        };
+        set({ savedAlbums: [revertedAlbum, ...get().savedAlbums] });
+      } else {
+        set({ savedAlbums: get().savedAlbums.filter(a => a.album_id !== albumId) });
+      }
+    }
+  },
+
+  isAlbumSaved: (albumId) => {
+    return get().savedAlbums.some(a => a.album_id === albumId);
   },
 }));

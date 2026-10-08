@@ -55,7 +55,7 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks, createPlaylist, updatePlaylist, deletePlaylist, recentlyPlayed, followedArtists, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist, updatePlaylist, deletePlaylist, recentlyPlayed, followedArtists, savedAlbums, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
   const navigate = useNavigate();
 
   // Detectar si debemos abrir el modal de crear playlist
@@ -111,50 +111,21 @@ export function LibraryPage() {
     setArtistsList(followed);
   }, [followedArtists]);
 
-  // Cargar álbumes del historial
+  // Cargar álbumes guardados
   useEffect(() => {
-    async function loadAlbumsFromHistory() {
-      setLoading(true);
-      
-      if (recentlyPlayed.length === 0) {
-        setAlbumsList([]);
-        setLoading(false);
-        return;
-      }
-
-      const albumsMap = new Map<string, Album>();
-
-      for (const trackId of recentlyPlayed.slice(0, 30)) {
-        try {
-          const jamendoTrack = await getJamendoTrack(trackId.replace('jamendo-', ''));
-          if (jamendoTrack) {
-            const track = jamendoTrackToTrack(jamendoTrack);
-            
-            // Agregar álbum si no existe
-            if (!albumsMap.has(track.albumId)) {
-              albumsMap.set(track.albumId, {
-                id: track.albumId,
-                title: track.album,
-                artist: track.artist,
-                artistId: track.artistId,
-                cover: track.cover,
-                year: 2024,
-                tracks: [],
-                type: 'album',
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`Error loading track ${trackId}:`, error);
-        }
-      }
-
-      setAlbumsList(Array.from(albumsMap.values()));
-      setLoading(false);
-    }
-
-    loadAlbumsFromHistory();
-  }, [recentlyPlayed]);
+    // Convertir SavedAlbum[] a Album[]
+    const saved: Album[] = savedAlbums.map(sa => ({
+      id: sa.album_id,
+      title: sa.album_title,
+      artist: sa.artist_name,
+      artistId: '',
+      cover: sa.album_cover || '',
+      year: new Date(sa.saved_at).getFullYear(),
+      tracks: [],
+      type: 'album',
+    }));
+    setAlbumsList(saved);
+  }, [savedAlbums]);
 
   const handleCreatePlaylist = async () => {
     if (!newPlaylistTitle.trim()) {
@@ -429,35 +400,36 @@ export function LibraryPage() {
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'
             : 'space-y-1'
         )}>
-          {loading ? (
-            <div className="col-span-full text-center py-16">
-              <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-[#8B8B96]">Cargando...</p>
-            </div>
-          ) : albumsList.length === 0 ? (
+          {albumsList.length === 0 ? (
             <div className="col-span-full text-center py-16">
               <Disc3 className="w-12 h-12 text-[#8B8B96]/30 mx-auto mb-4" strokeWidth={1.5} />
-              <p className="text-[#8B8B96]">Aún no tienes álbumes</p>
-              <p className="text-sm text-[#8B8B96]/60 mt-1">Empieza a escuchar música</p>
+              <p className="text-[#8B8B96]">No tienes álbumes guardados</p>
+              <p className="text-sm text-[#8B8B96]/60 mt-1">Busca artistas y guarda sus álbumes para verlos aquí</p>
+              <Link
+                to="/search"
+                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 text-[#A78BFA] text-sm font-medium hover:bg-[#7C3AED]/25 transition-all"
+              >
+                Explorar música
+              </Link>
             </div>
           ) : (
             albumsList.map(album => (
               view === 'grid' ? (
-                <div key={album.id} className="group cursor-pointer">
+                <Link key={album.id} to={`/playlist/${album.id}`} className="group cursor-pointer">
                   <div className="relative mb-3">
                     <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
                   </div>
                   <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
-                  <p className="text-xs text-[#8B8B96] truncate">{album.artist}</p>
-                </div>
+                  <p className="text-xs text-[#8B8B96] truncate">{album.artist} · Guardado</p>
+                </Link>
               ) : (
-                <div key={album.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
+                <Link key={album.id} to={`/playlist/${album.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
                   <img src={album.cover} alt={album.title} className="w-12 h-12 rounded object-cover" />
                   <div>
                     <p className="text-sm font-medium text-[#F5F5F7]">{album.title}</p>
-                    <p className="text-xs text-[#8B8B96]">{album.artist}</p>
+                    <p className="text-xs text-[#8B8B96]">{album.artist} · Guardado</p>
                   </div>
-                </div>
+                </Link>
               )
             ))
           )}
