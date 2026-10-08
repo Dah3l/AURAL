@@ -130,6 +130,24 @@ export async function searchTracks(query: string, limit = 20): Promise<JamendoTr
   });
 }
 
+export async function searchArtists(query: string, limit = 20): Promise<JamendoArtist[]> {
+  if (!query.trim()) return [];
+  
+  return fetchJamendo<JamendoArtist>('/artists/', {
+    limit: limit.toString(),
+    search: query,
+  });
+}
+
+export async function searchAlbums(query: string, limit = 20): Promise<JamendoAlbum[]> {
+  if (!query.trim()) return [];
+  
+  return fetchJamendo<JamendoAlbum>('/albums/', {
+    limit: limit.toString(),
+    search: query,
+  });
+}
+
 export async function getTracksByTag(tag: string, limit = 20): Promise<JamendoTrack[]> {
   return fetchJamendo<JamendoTrack>('/tracks/', {
     limit: limit.toString(),
