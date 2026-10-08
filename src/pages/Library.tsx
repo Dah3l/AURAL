@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid3X3, List, Music2, Disc3, Users, Heart, Plus, X } from 'lucide-react';
+import { Grid3X3, List, Music2, Disc3, Users, Heart, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
@@ -9,6 +9,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getTrackById as getJamendoTrack } from '../lib/jamendo';
 import { jamendoTrackToTrack } from '../lib/adapters';
 import type { Track, Artist, Album } from '../types';
+import type { Playlist } from '../types/database';
 
 type Tab = 'playlists' | 'albums' | 'artists' | 'liked';
 type View = 'grid' | 'list';
@@ -21,6 +22,18 @@ export function LibraryPage() {
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
   const [creating, setCreating] = useState(false);
   
+  // Estados para editar playlist
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [updating, setUpdating] = useState(false);
+  
+  // Estados para eliminar playlist
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingPlaylist, setDeletingPlaylist] = useState<Playlist | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  
   const [likedTracksList, setLikedTracksList] = useState<Track[]>([]);
   const [artistsList, setArtistsList] = useState<Artist[]>([]);
   const [albumsList, setAlbumsList] = useState<Album[]>([]);
@@ -29,7 +42,7 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { playTrack } = usePlayerStore();
-  const { playlists, likedTracks, createPlaylist, recentlyPlayed, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
+  const { playlists, likedTracks, createPlaylist, updatePlaylist, deletePlaylist, recentlyPlayed, pendingTrackToAdd, setPendingTrackToAdd, addTrackToPlaylist } = useLibraryStore();
   const navigate = useNavigate();
 
   // Detectar si debemos abrir el modal de crear playlist
@@ -171,6 +184,72 @@ export function LibraryPage() {
     }
   };
 
+  // Función para abrir modal de editar
+  const handleOpenEditModal = (playlist: Playlist) => {
+    setEditingPlaylist(playlist);
+    setEditTitle(playlist.title);
+    setEditDescription(playlist.description || '');
+    setShowEditModal(true);
+  };
+
+  // Función para editar playlist
+  const handleEditPlaylist = async () => {
+    if (!editingPlaylist || !editTitle.trim()) {
+      toast.error('El título es obligatorio');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const { error } = await updatePlaylist(editingPlaylist.id, {
+        title: editTitle,
+        description: editDescription,
+      });
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Playlist actualizada');
+        setShowEditModal(false);
+        setEditingPlaylist(null);
+        setEditTitle('');
+        setEditDescription('');
+      }
+    } catch (error) {
+      toast.error('Algo se desafinó. Intenta de nuevo.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Función para abrir modal de eliminar
+  const handleOpenDeleteModal = (playlist: Playlist) => {
+    setDeletingPlaylist(playlist);
+    setShowDeleteModal(true);
+  };
+
+  // Función para eliminar playlist
+  const handleDeletePlaylist = async () => {
+    if (!deletingPlaylist) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await deletePlaylist(deletingPlaylist.id);
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Playlist eliminada');
+        setShowDeleteModal(false);
+        setDeletingPlaylist(null);
+      }
+    } catch (error) {
+      toast.error('Algo se desafinó. Intenta de nuevo.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
       {/* Header */}
@@ -237,33 +316,77 @@ export function LibraryPage() {
           ) : (
             playlists.map(playlist => (
               view === 'grid' ? (
-                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="group">
-                  <div className="relative mb-3">
-                    {playlist.cover_url ? (
-                      <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
-                    ) : (
-                      <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
-                        <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
-                  <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
-                </Link>
-              ) : (
-                <Link key={playlist.id} to={`/playlist/${playlist.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
-                  {playlist.cover_url ? (
-                    <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
-                      <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                <div key={playlist.id} className="group relative">
+                  <Link to={`/playlist/${playlist.id}`} className="block">
+                    <div className="relative mb-3">
+                      {playlist.cover_url ? (
+                        <img src={playlist.cover_url} alt={playlist.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                      ) : (
+                        <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-lg ring-1 ring-[#2A2A35]">
+                          <Music2 className="w-12 h-12 text-white" strokeWidth={1.75} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="text-left min-w-0">
                     <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
                     <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                  </Link>
+                  {/* Botones de editar y eliminar */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleOpenEditModal(playlist);
+                      }}
+                      className="p-1.5 rounded-lg bg-[#131318]/90 hover:bg-[#1E1E26] border border-[#2A2A35] transition-all"
+                      aria-label="Editar playlist"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-[#8B8B96] hover:text-[#F5F5F7]" strokeWidth={1.75} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleOpenDeleteModal(playlist);
+                      }}
+                      className="p-1.5 rounded-lg bg-[#131318]/90 hover:bg-red-500/20 border border-[#2A2A35] hover:border-red-500/50 transition-all"
+                      aria-label="Eliminar playlist"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-[#8B8B96] hover:text-red-400" strokeWidth={1.75} />
+                    </button>
                   </div>
-                </Link>
+                </div>
+              ) : (
+                <div key={playlist.id} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-[#1E1E26] transition-colors">
+                  <Link to={`/playlist/${playlist.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    {playlist.cover_url ? (
+                      <img src={playlist.cover_url} alt={playlist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                        <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate text-[#F5F5F7]">{playlist.title}</p>
+                      <p className="text-xs text-[#8B8B96] truncate">{playlist.description || 'Playlist'}</p>
+                    </div>
+                  </Link>
+                  {/* Botones de editar y eliminar */}
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleOpenEditModal(playlist)}
+                      className="p-1.5 rounded-lg hover:bg-[#2A2A35] transition-all"
+                      aria-label="Editar playlist"
+                    >
+                      <Edit2 className="w-4 h-4 text-[#8B8B96] hover:text-[#F5F5F7]" strokeWidth={1.75} />
+                    </button>
+                    <button
+                      onClick={() => handleOpenDeleteModal(playlist)}
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
+                      aria-label="Eliminar playlist"
+                    >
+                      <Trash2 className="w-4 h-4 text-[#8B8B96] hover:text-red-400" strokeWidth={1.75} />
+                    </button>
+                  </div>
+                </div>
               )
             ))
           )}
@@ -488,6 +611,152 @@ export function LibraryPage() {
                     {creating ? 'Creando...' : (pendingTrackToAdd ? 'Crear y añadir' : 'Crear')}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de editar playlist */}
+      <AnimatePresence>
+        {showEditModal && editingPlaylist && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => !updating && setShowEditModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">Editar playlist</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Mi playlist"
+                    disabled={updating}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all disabled:opacity-50"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="¿De qué trata esta playlist?"
+                    rows={3}
+                    disabled={updating}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all resize-none disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    disabled={updating}
+                    className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleEditPlaylist}
+                    disabled={updating || !editTitle.trim()}
+                    className="flex-1 py-2.5 rounded-xl gradient-aura-glow text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updating ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de eliminar playlist */}
+      <AnimatePresence>
+        {showDeleteModal && deletingPlaylist && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => !deleting && setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-[#F5F5F7]">Eliminar playlist</h2>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#1E1E26] border border-[#2A2A35] mb-4">
+                  {deletingPlaylist.cover_url ? (
+                    <img src={deletingPlaylist.cover_url} alt={deletingPlaylist.title} className="w-12 h-12 rounded object-cover shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shrink-0">
+                      <Music2 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#F5F5F7] truncate">{deletingPlaylist.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{deletingPlaylist.description || 'Playlist'}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-[#8B8B96]">
+                  ¿Estás seguro de que quieres eliminar esta playlist? Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E1E26] border border-[#2A2A35] text-[#8B8B96] hover:text-[#F5F5F7] hover:bg-[#2A2A35] transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeletePlaylist}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400 font-medium hover:bg-red-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? 'Eliminando...' : 'Eliminar'}
+                </button>
               </div>
             </motion.div>
           </motion.div>
