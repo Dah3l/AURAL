@@ -255,3 +255,71 @@ export async function getTrackById(trackId: string): Promise<JamendoTrack | null
     return null;
   }
 }
+
+// Búsqueda unificada con AbortController para el motor de búsqueda
+export async function searchAllUnified(
+  query: string, 
+  limit = 20, 
+  signal?: AbortSignal
+): Promise<JamendoTrack[]> {
+  if (!query.trim()) return [];
+  
+  const url = buildDirectUrl('/tracks/', {
+    limit: limit.toString(),
+    search: query,
+    include: 'musicinfo',
+    audioformat: 'mp32',
+  });
+
+  // Intentar directo primero
+  try {
+    const response = await fetch(url, {
+      mode: 'cors',
+      headers: { 'Accept': 'application/json' },
+      signal,
+    });
+
+    if (response.ok) {
+      const data = await response.json() as JamendoResponse<JamendoTrack>;
+      if (data.headers?.status === 'error') {
+        throw new Error(data.headers.error_message);
+      }
+      return data.results || [];
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Auth error: ${response.status}`);
+    }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+    console.warn('Direct fetch failed, trying proxy...');
+  }
+
+  // Intentar con proxies
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    currentProxyIndex = i;
+    const proxyUrl = buildProxyUrl(url);
+
+    try {
+      const response = await fetch(proxyUrl, { signal });
+
+      if (response.ok) {
+        const data = await response.json() as JamendoResponse<JamendoTrack>;
+        if (data.headers?.status === 'error') {
+          throw new Error(data.headers.error_message);
+        }
+        return data.results || [];
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw error;
+      }
+      console.warn(`Proxy ${i + 1} failed, trying next...`);
+      continue;
+    }
+  }
+
+  throw new Error('All fetch attempts failed');
+}
