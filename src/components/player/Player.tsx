@@ -13,7 +13,11 @@ import { AuralLogo } from '../shared/AuralLogo';
 export function Player() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
   const [addingToPlaylistId, setAddingToPlaylistId] = useState<string | null>(null);
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
+  const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
   const {
     currentTrack, queue, queueIndex, isPlaying, progress, duration, volume, isMuted,
     shuffle, repeat, showQueue, showExpanded,
@@ -21,7 +25,7 @@ export function Player() {
     setVolume, toggleMute, toggleShuffle, cycleRepeat,
     toggleQueue, toggleExpanded, playTrack,
   } = usePlayerStore();
-  const { toggleLike, isLiked, addToHistory, playlists, addTrackToPlaylist, setPendingTrackToAdd } = useLibraryStore();
+  const { toggleLike, isLiked, addToHistory, playlists, addTrackToPlaylist, createPlaylist } = useLibraryStore();
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -608,16 +612,146 @@ export function Player() {
                 <button
                   disabled={!!addingToPlaylistId}
                   onClick={() => {
-                    // Guardar el track actual para agregarlo después de crear la playlist
-                    setPendingTrackToAdd(currentTrack.id);
                     setShowPlaylistModal(false);
-                    // El modal de crear playlist se abrirá desde Library
-                    window.location.href = '/library?create=true';
+                    setShowCreatePlaylistModal(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-[#1E1E26] hover:bg-[#2A2A35] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PlusCircle className="w-5 h-5 text-[#A78BFA]" strokeWidth={1.75} />
                   <span className="text-sm font-medium text-[#F5F5F7]">Crear nueva playlist</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de crear nueva playlist */}
+      <AnimatePresence>
+        {showCreatePlaylistModal && currentTrack && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => !creatingPlaylist && setShowCreatePlaylistModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[#131318] border border-[#2A2A35] rounded-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-[#2A2A35]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-[#F5F5F7]">Crear nueva playlist</h3>
+                  {!creatingPlaylist && (
+                    <button
+                      onClick={() => {
+                        setShowCreatePlaylistModal(false);
+                        setShowPlaylistModal(true);
+                        setNewPlaylistTitle('');
+                        setNewPlaylistDescription('');
+                      }}
+                      className="p-1 rounded-full hover:bg-[#1E1E26] transition-colors"
+                    >
+                      <X className="w-5 h-5 text-[#8B8B96]" strokeWidth={1.75} />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-[#8B8B96]">
+                  La canción actual se añadirá automáticamente a esta nueva playlist
+                </p>
+              </div>
+
+              {/* Form */}
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Nombre de la playlist
+                  </label>
+                  <input
+                    type="text"
+                    value={newPlaylistTitle}
+                    onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                    placeholder="Mi playlist"
+                    disabled={creatingPlaylist}
+                    className="w-full px-3 py-2.5 rounded-lg bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all disabled:opacity-50"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#8B8B96] mb-1.5">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={newPlaylistDescription}
+                    onChange={(e) => setNewPlaylistDescription(e.target.value)}
+                    placeholder="¿De qué trata esta playlist?"
+                    disabled={creatingPlaylist}
+                    rows={3}
+                    className="w-full px-3 py-2.5 rounded-lg bg-[#1E1E26] border border-[#2A2A35] text-[#F5F5F7] placeholder:text-[#8B8B96]/50 focus:outline-none focus:border-[#7C3AED]/50 transition-all resize-none disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-[#2A2A35] flex gap-3">
+                <button
+                  disabled={creatingPlaylist}
+                  onClick={() => {
+                    setShowCreatePlaylistModal(false);
+                    setShowPlaylistModal(true);
+                    setNewPlaylistTitle('');
+                    setNewPlaylistDescription('');
+                  }}
+                  className="flex-1 py-2.5 rounded-lg bg-[#1E1E26] hover:bg-[#2A2A35] transition-colors text-[#8B8B96] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled={creatingPlaylist || !newPlaylistTitle.trim()}
+                  onClick={async () => {
+                    if (!newPlaylistTitle.trim() || !currentTrack) return;
+                    
+                    setCreatingPlaylist(true);
+                    const { error, playlistId } = await createPlaylist(
+                      newPlaylistTitle,
+                      newPlaylistDescription
+                    );
+                    
+                    if (error) {
+                      toast.error(error);
+                      setCreatingPlaylist(false);
+                    } else if (playlistId) {
+                      // Agregar la canción actual a la nueva playlist
+                      const { error: addError } = await addTrackToPlaylist(playlistId, currentTrack.id);
+                      
+                      if (addError) {
+                        toast.error(addError);
+                      } else {
+                        toast.success(`Playlist creada y canción añadida`);
+                      }
+                      
+                      setCreatingPlaylist(false);
+                      setShowCreatePlaylistModal(false);
+                      setNewPlaylistTitle('');
+                      setNewPlaylistDescription('');
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-lg gradient-aura-glow text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {creatingPlaylist ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Creando...</span>
+                    </>
+                  ) : (
+                    'Crear playlist'
+                  )}
                 </button>
               </div>
             </motion.div>
