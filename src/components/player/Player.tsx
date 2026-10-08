@@ -111,6 +111,8 @@ export function Player() {
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
   const progressPercent = duration ? (progress / duration) * 100 : 0;
 
+  if (!currentTrack) return null;
+
   return (
     <>
       <audio
@@ -272,7 +274,7 @@ export function Player() {
       </AnimatePresence>
 
       {/* Barra del reproductor - Web Layout */}
-      <div className="bg-[#08080C] border-t border-[#2A2A35] relative z-40">
+      <div className="bg-[#08080C] border-t border-[#2A2A35]">
         {/* Layout Desktop - 3 columnas */}
         <div className="hidden md:flex items-center gap-4 px-4 h-[90px]">
           {/* Columna 1: Cover + Info */}
