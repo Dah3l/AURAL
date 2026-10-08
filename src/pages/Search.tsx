@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search as SearchIcon, Play } from 'lucide-react';
+import { Search as SearchIcon, Play, Disc3 } from 'lucide-react';
 import { usePlayerStore } from '../store/playerStore';
-import { searchTracks, getPopularArtists } from '../lib/jamendo';
-import { jamendoTracksToTracks, jamendoArtistsToArtists } from '../lib/adapters';
+import { searchTracks, searchArtists, searchAlbums } from '../lib/jamendo';
+import { jamendoTracksToTracks, jamendoArtistsToArtists, jamendoAlbumsToAlbums } from '../lib/adapters';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatNumber } from '../lib/utils';
 import { AuralLogo } from '../components/shared/AuralLogo';
-import { Track, Artist } from '../types';
+import { Track, Artist, Album } from '../types';
 import { Link } from 'react-router-dom';
+
+type SearchFilter = 'all' | 'tracks' | 'artists' | 'albums';
 
 export function SearchPage() {
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<SearchFilter>('all');
   const { playTrack } = usePlayerStore();
   const debouncedQuery = useDebounce(query, 300);
 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -25,6 +29,7 @@ export function SearchPage() {
       if (!debouncedQuery.trim()) {
         setTracks([]);
         setArtists([]);
+        setAlbums([]);
         setHasSearched(false);
         return;
       }
@@ -33,28 +38,16 @@ export function SearchPage() {
         setLoading(true);
         setHasSearched(true);
         
-        // Buscar tracks por el query
-        const trackResults = await searchTracks(debouncedQuery, 20);
-        const convertedTracks = jamendoTracksToTracks(trackResults);
-        setTracks(convertedTracks);
+        // Búsquedas en paralelo
+        const [trackResults, artistResults, albumResults] = await Promise.all([
+          searchTracks(debouncedQuery, 20),
+          searchArtists(debouncedQuery, 10),
+          searchAlbums(debouncedQuery, 10),
+        ]);
         
-        // Extraer artistas únicos de los tracks encontrados
-        const uniqueArtists = new Map<string, Artist>();
-        convertedTracks.forEach(track => {
-          if (!uniqueArtists.has(track.artistId)) {
-            uniqueArtists.set(track.artistId, {
-              id: track.artistId,
-              name: track.artist,
-              image: track.cover, // Usar la portada del track como imagen del artista
-              genre: 'Various',
-              monthlyListeners: 0,
-              verified: false,
-              albums: [],
-            });
-          }
-        });
-        
-        setArtists(Array.from(uniqueArtists.values()).slice(0, 10));
+        setTracks(jamendoTracksToTracks(trackResults));
+        setArtists(jamendoArtistsToArtists(artistResults));
+        setAlbums(jamendoAlbumsToAlbums(albumResults));
       } catch (error) {
         console.error('Search error:', error);
       } finally {
@@ -65,6 +58,15 @@ export function SearchPage() {
     search();
   }, [debouncedQuery]);
 
+  const hasResults = tracks.length > 0 || artists.length > 0 || albums.length > 0;
+
+  const filters: { key: SearchFilter; label: string }[] = [
+    { key: 'all', label: 'Todo' },
+    { key: 'tracks', label: 'Canciones' },
+    { key: 'artists', label: 'Artistas' },
+    { key: 'albums', label: 'Álbumes' },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-8">
       {/* Input */}
@@ -74,11 +76,30 @@ export function SearchPage() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Busca canciones, artistas..."
+          placeholder="Busca canciones, artistas, álbumes..."
           autoFocus
           className="w-full pl-10 md:pl-11 pr-4 py-2.5 md:py-3 rounded-xl bg-[#131318] border border-[#2A2A35] text-sm md:text-base text-[#F5F5F7] placeholder:text-[#8B8B96] focus:outline-none focus:border-[#7C3AED]/50 focus:bg-[#1E1E26] transition-all"
         />
       </div>
+
+      {/* Filtros */}
+      {hasSearched && hasResults && (
+        <div className="flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 scrollbar-hide">
+          {filters.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                filter === f.key
+                  ? 'bg-[#F5F5F7] text-[#08080C]'
+                  : 'bg-[#131318] text-[#8B8B96] border border-[#2A2A35] hover:bg-[#1E1E26] hover:text-[#F5F5F7]'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
@@ -100,7 +121,7 @@ export function SearchPage() {
       {/* Results */}
       {!loading && hasSearched && (
         <div className="space-y-6">
-          {tracks.length === 0 && artists.length === 0 && (
+          {!hasResults && (
             <div className="text-center py-16">
               <div className="flex justify-center mb-4 opacity-30">
                 <AuralLogo size={48} />
@@ -110,11 +131,15 @@ export function SearchPage() {
             </div>
           )}
 
-          {tracks.length > 0 && (
+          {/* Canciones */}
+          {tracks.length > 0 && (filter === 'all' || filter === 'tracks') && (
             <section>
-              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">Canciones</h2>
+              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+                Canciones
+                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({tracks.length})</span>}
+              </h2>
               <div className="space-y-0.5 md:space-y-1">
-                {tracks.slice(0, 10).map((track, i) => (
+                {(filter === 'tracks' ? tracks : tracks.slice(0, 5)).map((track, i) => (
                   <motion.button
                     key={track.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -131,7 +156,7 @@ export function SearchPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-[#F5F5F7]">{track.title}</p>
-                      <p className="text-xs text-[#8B8B96] truncate">{track.artist}</p>
+                      <p className="text-xs text-[#8B8B96] truncate">{track.artist} · {track.album}</p>
                     </div>
                     <span className="text-xs text-[#8B8B96] font-mono shrink-0">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</span>
                   </motion.button>
@@ -140,11 +165,15 @@ export function SearchPage() {
             </section>
           )}
 
-          {artists.length > 0 && (
+          {/* Artistas */}
+          {artists.length > 0 && (filter === 'all' || filter === 'artists') && (
             <section>
-              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">Artistas</h2>
+              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+                Artistas
+                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({artists.length})</span>}
+              </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                {artists.slice(0, 6).map(artist => (
+                {(filter === 'artists' ? artists : artists.slice(0, 6)).map(artist => (
                   <motion.div
                     key={artist.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -155,6 +184,35 @@ export function SearchPage() {
                       <p className="text-xs sm:text-sm font-medium text-center truncate text-[#F5F5F7]">{artist.name}</p>
                       <p className="text-[10px] sm:text-xs text-[#8B8B96] text-center">Artista</p>
                     </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Álbumes */}
+          {albums.length > 0 && (filter === 'all' || filter === 'albums') && (
+            <section>
+              <h2 className="text-base sm:text-lg font-semibold mb-2 md:mb-3 text-[#F5F5F7]">
+                Álbumes
+                {filter === 'all' && <span className="text-sm text-[#8B8B96] font-normal ml-2">({albums.length})</span>}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                {(filter === 'albums' ? albums : albums.slice(0, 5)).map(album => (
+                  <motion.div
+                    key={album.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group cursor-pointer"
+                  >
+                    <div className="relative mb-2">
+                      <img src={album.cover} alt={album.title} className="w-full aspect-square rounded-xl object-cover shadow-lg ring-1 ring-[#2A2A35]" />
+                      <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full gradient-aura-glow flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <Disc3 className="w-5 h-5 text-white" strokeWidth={1.75} />
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium truncate text-[#F5F5F7]">{album.title}</p>
+                    <p className="text-xs text-[#8B8B96] truncate">{album.artist} · {album.year}</p>
                   </motion.div>
                 ))}
               </div>
