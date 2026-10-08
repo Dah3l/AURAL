@@ -44,6 +44,16 @@ export interface FollowedArtist {
   followed_at: string;
 }
 
+export interface SavedAlbum {
+  id: string;
+  user_id: string;
+  album_id: string;
+  album_title: string;
+  album_cover: string | null;
+  artist_name: string;
+  saved_at: string;
+}
+
 export interface PlayerState {
   user_id: string;
   current_track_id: string | null;
