@@ -240,3 +240,30 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Efecto marquee para títulos largos en el reproductor */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.marquee-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 12s linear infinite;
+  padding-left: 100%;
+}
+
+.marquee-text:hover {
+  animation-play-state: paused;
+}
