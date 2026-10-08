@@ -126,7 +126,7 @@ export function Player() {
       />
 
       {/* Vista expandida */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showExpanded && (
           <motion.div
             initial={{ y: '100%' }}
@@ -227,7 +227,7 @@ export function Player() {
       </AnimatePresence>
 
       {/* Cola de reproducción - Mobile First */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showQueue && (
           <motion.div
             initial={{ x: '100%' }}
@@ -478,7 +478,7 @@ export function Player() {
       </div>
 
       {/* Modal de añadir a playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showPlaylistModal && currentTrack && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -598,7 +598,7 @@ export function Player() {
       </AnimatePresence>
 
       {/* Modal de crear nueva playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showCreatePlaylistModal && currentTrack && (
           <motion.div
             initial={{ opacity: 0 }}

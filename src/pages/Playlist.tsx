@@ -293,7 +293,7 @@ export function PlaylistPage() {
           </button>
           
           {/* Menú dropdown */}
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {showMenu && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -5 }}
@@ -424,7 +424,7 @@ export function PlaylistPage() {
       )}
 
       {/* Modal de editar playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showEditModal && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -503,7 +503,7 @@ export function PlaylistPage() {
       </AnimatePresence>
 
       {/* Modal de eliminar playlist */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showDeleteModal && playlist && (
           <motion.div
             initial={{ opacity: 0 }}
