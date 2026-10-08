@@ -9,6 +9,8 @@ import { supabase } from '../lib/supabase';
 import { getTrackById as getJamendoTrack } from '../lib/jamendo';
 import { jamendoTrackToTrack } from '../lib/adapters';
 import { formatDuration, formatTime } from '../lib/utils';
+import { usePagination } from '../hooks/usePagination';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import type { Track } from '../types';
 import type { Playlist } from '../types/database';
 
@@ -35,6 +37,17 @@ export function PlaylistPage() {
   // Estados para eliminar playlist
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Paginación para tracks de la playlist
+  const {
+    visibleItems: visiblePlaylistTracks,
+    hasMore: hasMorePlaylistTracks,
+    loadMore: loadMorePlaylistTracks,
+    visibleCount: playlistVisibleCount,
+    totalItems: playlistTotalCount,
+    reset: resetPlaylistPagination,
+  } = usePagination(playlistTracks, { itemsPerPage: 15, loadMoreCount: 10 });
 
   useEffect(() => {
     async function loadPlaylist() {
@@ -89,6 +102,11 @@ export function PlaylistPage() {
 
     loadPlaylist();
   }, [id, getPlaylistTracks]);
+
+  // Resetear paginación cuando cambian los tracks
+  useEffect(() => {
+    resetPlaylistPagination();
+  }, [playlistTracks.length, resetPlaylistPagination]);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -350,7 +368,7 @@ export function PlaylistPage() {
             <span></span>
           </div>
 
-          {playlistTracks.map((track, i) => (
+          {visiblePlaylistTracks.map((track, i) => (
             <motion.div
               key={track.id}
               initial={{ opacity: 0, y: 5 }}
@@ -387,7 +405,7 @@ export function PlaylistPage() {
           ))}
 
           {/* Mobile layout */}
-          {playlistTracks.map((track, i) => (
+          {visiblePlaylistTracks.map((track, i) => (
             <motion.div
               key={`mobile-${track.id}`}
               initial={{ opacity: 0, y: 5 }}
@@ -419,6 +437,21 @@ export function PlaylistPage() {
               <span className="text-xs text-[#8B8B96] font-mono shrink-0">{formatTime(track.duration)}</span>
             </motion.div>
           ))}
+
+          {/* Botón cargar más */}
+          <LoadMoreButton
+            onClick={() => {
+              setLoadingMore(true);
+              setTimeout(() => {
+                loadMorePlaylistTracks();
+                setLoadingMore(false);
+              }, 300);
+            }}
+            hasMore={hasMorePlaylistTracks}
+            visibleCount={playlistVisibleCount}
+            totalCount={playlistTotalCount}
+            loading={loadingMore}
+          />
         </div>
       )}
 
