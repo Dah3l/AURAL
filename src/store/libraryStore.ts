@@ -33,30 +33,14 @@ interface LibraryState {
   addToHistory: (trackId: string) => Promise<void>;
   
   // Followed artists actions
-  fetchFollowedArtists: () => void;
-  toggleFollowArtist: (artistId: string, artistName: string, artistImage: string) => void;
+  fetchFollowedArtists: () => Promise<void>;
+  toggleFollowArtist: (artistId: string, artistName: string, artistImage: string) => Promise<void>;
   isFollowed: (artistId: string) => boolean;
   
   // Saved albums actions
   fetchSavedAlbums: () => Promise<void>;
   toggleSaveAlbum: (albumId: string, albumTitle: string, albumCover: string | null, artistName: string) => Promise<void>;
   isAlbumSaved: (albumId: string) => boolean;
-}
-
-// Helper para localStorage de artistas seguidos
-const FOLLOWED_ARTISTS_KEY = 'aural_followed_artists';
-
-function getStoredFollowedArtists(): FollowedArtist[] {
-  try {
-    const stored = localStorage.getItem(FOLLOWED_ARTISTS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFollowedArtists(artists: FollowedArtist[]) {
-  localStorage.setItem(FOLLOWED_ARTISTS_KEY, JSON.stringify(artists));
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -381,25 +365,36 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   // ===== FOLLOWED ARTISTS =====
   
-  fetchFollowedArtists: () => {
-    const artists = getStoredFollowedArtists();
-    set({ followedArtists: artists });
+  fetchFollowedArtists: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('followed_artists')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('followed_at', { ascending: false });
+
+      if (!error && data) {
+        set({ followedArtists: data });
+      }
+    } catch (error) {
+      console.error('Error fetching followed artists:', error);
+    }
   },
 
-  toggleFollowArtist: (artistId, artistName, artistImage) => {
+  toggleFollowArtist: async (artistId, artistName, artistImage) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
 
     const { followedArtists } = get();
     const isCurrentlyFollowed = followedArtists.some(a => a.artist_id === artistId);
 
-    let newFollowedArtists: FollowedArtist[];
-
+    // Optimistic update
     if (isCurrentlyFollowed) {
-      // Dejar de seguir
-      newFollowedArtists = followedArtists.filter(a => a.artist_id !== artistId);
+      set({ followedArtists: followedArtists.filter(a => a.artist_id !== artistId) });
     } else {
-      // Seguir
       const newFollow: FollowedArtist = {
         id: `follow-${Date.now()}`,
         user_id: user.id,
@@ -408,12 +403,43 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         artist_image: artistImage,
         followed_at: new Date().toISOString(),
       };
-      newFollowedArtists = [newFollow, ...followedArtists];
+      set({ followedArtists: [newFollow, ...followedArtists] });
     }
 
-    // Actualizar estado y persistir
-    set({ followedArtists: newFollowedArtists });
-    saveFollowedArtists(newFollowedArtists);
+    try {
+      if (isCurrentlyFollowed) {
+        await supabase
+          .from('followed_artists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('artist_id', artistId);
+      } else {
+        await supabase
+          .from('followed_artists')
+          .insert({
+            user_id: user.id,
+            artist_id: artistId,
+            artist_name: artistName,
+            artist_image: artistImage,
+          });
+      }
+    } catch (error) {
+      console.error('Error toggling followed artist:', error);
+      // Revert on error
+      if (isCurrentlyFollowed) {
+        const revertedFollow: FollowedArtist = {
+          id: `follow-${Date.now()}`,
+          user_id: user.id,
+          artist_id: artistId,
+          artist_name: artistName,
+          artist_image: artistImage,
+          followed_at: new Date().toISOString(),
+        };
+        set({ followedArtists: [revertedFollow, ...get().followedArtists] });
+      } else {
+        set({ followedArtists: get().followedArtists.filter(a => a.artist_id !== artistId) });
+      }
+    }
   },
 
   isFollowed: (artistId) => {
