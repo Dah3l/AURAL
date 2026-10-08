@@ -348,7 +348,7 @@ export function SearchPage() {
                 )}
               </h2>
               <div className="space-y-0.5 md:space-y-1">
-                {(filter === 'tracks' ? results.tracks : results.tracks.slice(0, 5)).map((track, i) =>
+                {results.tracks.map((track, i) =>
                   renderTrackItem(track, i, selectedInfo.trackIdx === i)
                 )}
               </div>
@@ -367,7 +367,7 @@ export function SearchPage() {
                 )}
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                {(filter === 'artists' ? results.artists : results.artists.slice(0, 6)).map((artist) =>
+                {results.artists.map((artist) =>
                   renderArtistItem(artist, selectedInfo.artistIdx === results.artists.indexOf(artist))
                 )}
               </div>
@@ -386,7 +386,7 @@ export function SearchPage() {
                 )}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-                {(filter === 'albums' ? results.albums : results.albums.slice(0, 5)).map((album) =>
+                {results.albums.map((album) =>
                   renderAlbumItem(album, selectedInfo.albumIdx === results.albums.indexOf(album))
                 )}
               </div>
