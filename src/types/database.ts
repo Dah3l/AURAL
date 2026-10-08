@@ -35,6 +35,15 @@ export interface ListeningHistory {
   played_at: string;
 }
 
+export interface FollowedArtist {
+  id: string;
+  user_id: string;
+  artist_id: string;
+  artist_name: string;
+  artist_image: string;
+  followed_at: string;
+}
+
 export interface PlayerState {
   user_id: string;
   current_track_id: string | null;

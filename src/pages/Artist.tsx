@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Pause, Shuffle, Heart, MoreHorizontal, CheckCircle2, UserCheck, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { getTracksByArtist, getPopularArtists } from '../lib/jamendo';
@@ -12,7 +13,7 @@ import { Track, Artist } from '../types';
 export function ArtistPage() {
   const { id } = useParams<{ id: string }>();
   const { playTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { toggleLike, isLiked } = useLibraryStore();
+  const { toggleLike, isLiked, toggleFollowArtist, isFollowed } = useLibraryStore();
 
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artistTracks, setArtistTracks] = useState<Track[]>([]);
@@ -167,9 +168,51 @@ export function ArtistPage() {
             <Play className="w-5 h-5 md:w-6 md:h-6 text-white fill-white ml-0.5" strokeWidth={1.75} />
           )}
         </button>
-        <button className="px-4 md:px-6 py-2 rounded-full border border-[#2A2A35] text-sm font-medium text-[#F5F5F7] hover:bg-[#1E1E26] hover:border-[#7C3AED]/50 transition-all">
-          Seguir
-        </button>
+        <motion.button
+          key={isFollowed(artist.id) ? 'following' : 'follow'}
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
+          onClick={() => {
+            const wasFollowed = isFollowed(artist.id);
+            toggleFollowArtist(artist.id, artist.name, artist.image);
+            toast.success(
+              wasFollowed 
+                ? `Dejaste de seguir a ${artist.name}` 
+                : `Ahora sigues a ${artist.name}`
+            );
+          }}
+          className={`px-4 md:px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+            isFollowed(artist.id)
+              ? 'bg-[#7C3AED]/15 border border-[#7C3AED]/40 text-[#A78BFA] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
+              : 'border border-[#2A2A35] text-[#F5F5F7] hover:bg-[#1E1E26] hover:border-[#7C3AED]/50'
+          }`}
+        >
+          <AnimatePresence mode="wait">
+            {isFollowed(artist.id) ? (
+              <motion.span
+                key="following-icon"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" strokeWidth={1.75} />
+                <span>Siguiendo</span>
+              </motion.span>
+            ) : (
+              <motion.span
+                key="follow-icon"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" strokeWidth={1.75} />
+                <span>Seguir</span>
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
         <button className="p-2 rounded-full hover:bg-[#1E1E26] active:bg-[#1E1E26] transition-colors text-[#8B8B96] hover:text-[#F5F5F7]">
           <Shuffle className="w-5 h-5" strokeWidth={1.75} />
         </button>
