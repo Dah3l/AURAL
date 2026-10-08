@@ -22,8 +22,18 @@ export function ArtistPage() {
   const [filter, setFilter] = useState<'all' | 'tracks' | 'albums'>('all');
 
   useEffect(() => {
+    // Resetear estado cuando cambia el ID
+    setArtist(null);
+    setArtistTracks([]);
+    setArtistAlbums([]);
+    setRelatedArtists([]);
+    setFilter('all');
+    
     async function loadArtist() {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -89,6 +99,15 @@ export function ArtistPage() {
 
     loadArtist();
   }, [id]);
+
+  // Si no hay ID, redirigir o mostrar error
+  if (!id) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-[#8B8B96]">Artista no especificado.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
