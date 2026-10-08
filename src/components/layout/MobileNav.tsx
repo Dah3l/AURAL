@@ -13,7 +13,7 @@ export function MobileNav() {
   ];
 
   return (
-    <nav className="md:hidden bg-[#08080C]/95 backdrop-blur-xl border-t border-[#2A2A35]">
+    <nav className="md:hidden bg-[#08080C] border-t border-[#2A2A35] relative z-40">
       <div className="flex items-center justify-around py-2 px-2">
         {items.map(item => {
           const isActive = location.pathname === item.path;
