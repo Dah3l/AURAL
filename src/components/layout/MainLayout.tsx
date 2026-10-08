@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './Sidebar';
@@ -10,8 +10,10 @@ import { usePlayerStore } from '../../store/playerStore';
 export function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const [bottomBarHeight, setBottomBarHeight] = useState(0);
   const location = useLocation();
   const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
 
   // Aplicar tema al document
   useEffect(() => {
@@ -35,6 +37,26 @@ export function MainLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Medir dinámicamente la altura de la barra inferior
+  useEffect(() => {
+    if (!bottomBarRef.current) return;
+
+    const updateHeight = () => {
+      if (bottomBarRef.current) {
+        setBottomBarHeight(bottomBarRef.current.offsetHeight);
+      }
+    };
+
+    // Medir inicialmente
+    updateHeight();
+
+    // Usar ResizeObserver para detectar cambios
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(bottomBarRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [currentTrack]); // Recalcular cuando cambie el track (Player aparece/desaparece)
+
   return (
     <div className="h-screen flex flex-col bg-[#08080C] dark:bg-[#08080C] light:bg-[#FAFAFA] overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
@@ -50,9 +72,9 @@ export function MainLayout() {
             id="main-content"
             className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 transition-all duration-300 relative z-0"
             style={{
-              paddingBottom: currentTrack 
-                ? 'calc(env(safe-area-inset-bottom, 0px) + 160px)'
-                : 'calc(env(safe-area-inset-bottom, 0px) + 80px)'
+              paddingBottom: window.innerWidth < 768 
+                ? `calc(env(safe-area-inset-bottom, 0px) + ${bottomBarHeight + 16}px)`
+                : '16px'
             }}
           >
             <AnimatePresence mode="wait">
@@ -70,7 +92,10 @@ export function MainLayout() {
       </div>
       
       {/* Bottom Bar Container - Fixed en mobile, normal en desktop */}
-      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto z-40 pointer-events-none">
+      <div 
+        ref={bottomBarRef}
+        className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto z-40 pointer-events-none"
+      >
         <div className="pointer-events-auto">
           <Player />
           <MobileNav />
